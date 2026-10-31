@@ -69,7 +69,8 @@ class Catalog:
                 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS assets (
                     asset TEXT PRIMARY KEY, class TEXT, output TEXT, parse_status TEXT,
-                    reason TEXT, functions TEXT NOT NULL, properties TEXT NOT NULL
+                    reason TEXT, functions TEXT NOT NULL, properties TEXT NOT NULL,
+                    default_values TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE TABLE IF NOT EXISTS functions (
                     asset TEXT NOT NULL, name TEXT NOT NULL, calls TEXT NOT NULL,
@@ -83,6 +84,11 @@ class Catalog:
                 CREATE INDEX IF NOT EXISTS references_target ON references_index(target);
                 """
             )
+            # Migration: older index files lack the default_values column.
+            columns = {row[1] for row in db.execute("PRAGMA table_info(assets)").fetchall()}
+            if "default_values" not in columns:
+                db.execute("ALTER TABLE assets ADD COLUMN default_values TEXT NOT NULL DEFAULT '[]'")
+
             previous = db.execute("SELECT value FROM meta WHERE key = 'manifest_mtime'").fetchone()
             if previous and previous[0] == str(manifest_mtime):
                 return
@@ -102,9 +108,11 @@ class Catalog:
 
                 properties = document.get("properties", [])
                 functions = document.get("functions", [])
+                default_values = document.get("defaultValues", [])
                 entry["_properties"] = properties
+                entry["_default_values"] = default_values
                 db.execute(
-                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         asset,
                         entry.get("class") or document.get("class"),
@@ -113,6 +121,7 @@ class Catalog:
                         entry.get("reason"),
                         json.dumps(entry.get("functions", [f.get("name") for f in functions])),
                         json.dumps(properties),
+                        json.dumps(default_values),
                     ),
                 )
                 for function in functions:
@@ -172,11 +181,14 @@ class Catalog:
 
     def find_assets(self, query: str, limit: int, offset: int = 0) -> dict[str, Any]:
         needle = f"%{query.casefold().strip()}%"
-        expression = "lower(asset || ' ' || ifnull(class, '') || ' ' || functions || ' ' || properties) LIKE ?"
+        expression = (
+            "lower(asset || ' ' || ifnull(class, '') || ' ' || functions || ' ' || properties"
+            " || ' ' || ifnull(default_values, '')) LIKE ?"
+        )
         with sqlite3.connect(self.index_path) as db:
             count = db.execute(f"SELECT COUNT(*) FROM assets WHERE {expression}", (needle,)).fetchone()[0]
             rows = db.execute(
-                f"SELECT asset, class, output, parse_status, functions FROM assets WHERE {expression} "
+                f"SELECT asset, class, output, parse_status, functions, default_values FROM assets WHERE {expression} "
                 "ORDER BY asset LIMIT ? OFFSET ?",
                 (needle, limit, offset),
             ).fetchall()
@@ -187,8 +199,9 @@ class Catalog:
                 "functions": json.loads(functions),
                 "parseStatus": parse_status,
                 "hasSemanticOutput": bool(output),
+                "hasDefaultValues": bool(json.loads(default_values)),
             }
-            for asset, class_name, output, parse_status, functions in rows
+            for asset, class_name, output, parse_status, functions, default_values in rows
         ]
         next_offset = offset + limit if offset + limit < count else None
         return {
@@ -292,6 +305,7 @@ TOOLS = [
                 "asset": {"type": "string", "description": "Indexed asset path."},
                 "maxProperties": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
                 "maxFunctions": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
+                "maxDefaults": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
             },
             "required": ["asset"],
         },
@@ -420,8 +434,10 @@ class McpServer:
             document = self.catalog.load_asset(asset)
             max_properties = bounded_limit(arguments.get("maxProperties", 50))
             max_functions = bounded_limit(arguments.get("maxFunctions", 50))
+            max_defaults = bounded_limit(arguments.get("maxDefaults", 50))
             properties = document.get("properties", [])
             functions = document.get("functions", [])
+            default_values = document.get("defaultValues", [])
             return _json_result(
                 {
                     "schemaVersion": document.get("schemaVersion"),
@@ -430,6 +446,8 @@ class McpServer:
                     "parent": document.get("parent"),
                     "engineVersion": document.get("engineVersion"),
                     "parseStatus": document.get("parseStatus"),
+                    "defaultValues": default_values[:max_defaults],
+                    "defaultValuesTruncated": len(default_values) > max_defaults,
                     "properties": properties[:max_properties],
                     "propertiesTruncated": len(properties) > max_properties,
                     "functions": [

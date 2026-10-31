@@ -142,6 +142,39 @@ class StdioIntegrationTests(unittest.TestCase):
         responses = self._exchange([{"jsonrpc": "2.0", "id": 7, "method": "ping"}])
         self.assertEqual(responses[7]["result"], {})
 
+    def test_default_values_discoverable_and_queryable(self):
+        responses = self._exchange(
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {"name": "find_assets", "arguments": {"query": "Prefer further if close"}},
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "get_asset_summary",
+                        "arguments": {"asset": "Content/Fixtures/UtilityBehavior.uasset"},
+                    },
+                },
+            ]
+        )
+
+        found = responses[1]["result"]["structuredContent"]
+        assets = [result["asset"] for result in found["results"]]
+        self.assertIn("Content/Fixtures/UtilityBehavior.uasset", assets)
+        self.assertTrue(found["results"][0]["hasDefaultValues"])
+
+        summary = responses[2]["result"]["structuredContent"]
+        self.assertEqual(summary["parseStatus"], "complete")
+        self.assertGreater(len(summary["defaultValues"]), 0)
+        names = {value["name"] for value in summary["defaultValues"]}
+        self.assertIn("Weight", names)
+        self.assertIn("Action", names)
+
 
 class FixtureCatalogTests(unittest.TestCase):
     """In-process coverage for workflow tools over the static fixture tree."""
@@ -161,7 +194,7 @@ class FixtureCatalogTests(unittest.TestCase):
         page = self.server.call_tool("find_assets", {"query": "", "limit": 1, "offset": 0})
         self.assertEqual(len(page["structuredContent"]["results"]), 1)
         self.assertEqual(page["structuredContent"]["nextOffset"], 1)
-        self.assertEqual(page["structuredContent"]["count"], 3)
+        self.assertEqual(page["structuredContent"]["count"], 4)
 
     def test_compare_assets_and_partial_diagnostics(self):
         comparison = self.server.call_tool(
@@ -189,14 +222,14 @@ class FixtureCatalogTests(unittest.TestCase):
 
     def test_catalog_stats_and_refresh(self):
         stats = self.server.call_tool("get_catalog_stats", {})
-        self.assertEqual(stats["structuredContent"]["assets"], 3)
-        self.assertEqual(stats["structuredContent"]["semanticAssets"], 2)
+        self.assertEqual(stats["structuredContent"]["assets"], 4)
+        self.assertEqual(stats["structuredContent"]["semanticAssets"], 3)
         self.assertEqual(stats["structuredContent"]["functions"], 3)
         self.assertEqual(stats["structuredContent"]["references"], 4)
 
         refreshed = self.server.call_tool("refresh_catalog", {})
         self.assertTrue(refreshed["structuredContent"]["refreshed"])
-        self.assertEqual(refreshed["structuredContent"]["assets"], 3)
+        self.assertEqual(refreshed["structuredContent"]["assets"], 4)
 
 
 if __name__ == "__main__":

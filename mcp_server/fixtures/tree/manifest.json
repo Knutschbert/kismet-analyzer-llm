@@ -25,6 +25,14 @@
       "functions": [],
       "parseStatus": "empty",
       "reason": "no_semantic_content"
+    },
+    {
+      "asset": "Content/Fixtures/UtilityBehavior.uasset",
+      "output": "Content/Fixtures/UtilityBehavior.llm.json",
+      "class": "UtilityBehavior_C",
+      "functions": [],
+      "parseStatus": "complete",
+      "reason": null
     }
   ]
 }

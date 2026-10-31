@@ -42,6 +42,15 @@ This keeps repeated questions from re-reading semantic documents, and
 `find_assets`/`find_references` query the index instead of scanning files.
 Empty assets are indexed for discovery but have no output document.
 
+## Default values
+
+Assets that carry no Blueprint graph (for example utility AI behaviors) hold
+their meaningful data in the CDO rather than kismet bytecode. `gen-llm-tree
+--defaults` emits CDO defaults into each document's `defaultValues` array, so
+such property-only assets become discoverable and queryable (`parseStatus:
+"complete"`) instead of being dropped as empty. See `schema.md` for the field
+shape. Existing trees are unchanged unless the flag is passed.
+
 ### `get_asset_summary`
 
 Return the Tier 0 structure: identity, parent, properties, function summaries,

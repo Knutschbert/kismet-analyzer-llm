@@ -8,8 +8,14 @@ The exporter currently emits these top-level fields:
 
 ```text
 schemaVersion, source, parseStatus, asset, class, parent, engineVersion,
-properties, functions, callEdges, diagnostics
+properties, defaultValues, functions, callEdges, diagnostics
 ```
+
+`defaultValues` is optional. It is present only when the export is generated
+with `--defaults`, in which case it carries the asset's CDO (Class Default
+Object) property values — the serialized defaults an actor or behavior initializes
+itself to. This lets graph-less, property-only assets (for example utility AI
+behavior blueprints) still surface their configuration.
 
 ## Asset summary
 
@@ -69,6 +75,31 @@ Return this only for a selected function or selected block range:
 }
 ```
 
+## Default values (CDO)
+
+Present only when generated with `--defaults`. Each entry is `name`, `type`
+(the UAssetAPI property type), and a compact `value` string. Containers are
+flattened recursively and object references are resolved to readable names:
+
+```json
+{
+  "defaultValues": [
+    {"name": "Weight", "type": "Int", "value": "5"},
+    {
+      "name": "Considerations",
+      "type": "Array",
+      "value": "[UtilityAI_Consideration(Name=Prefer further if close, Input=I_Distance_0, Curve=UtilityAI_Curve(m=0.4, k=1, c=0, b=0.6, Type=EUtilityAI_Curve::Linear)), ...]"
+    },
+    {"name": "Action", "type": "Object", "value": "A_MoveTo_C_0"},
+    {"name": "TargetGenerator", "type": "Object", "value": "TG_PointsAroundActorsWithAITag_0"}
+  ]
+}
+```
+
+Floats use invariant decimal points (`.`), never locale-specific commas, so the
+payload stays portable across machines. Values that could not be rendered fall
+back to the property's readable string rather than a raw index.
+
 ## Representation rules
 
 - Resolve imports and exports to readable names whenever possible.
@@ -95,7 +126,10 @@ Return this only for a selected function or selected block range:
 | 4 | Raw/unparsed data and full asset JSON | Parser/debugging workflows |
 
 Tree exports omit assets whose semantic result has no properties, functions,
-call edges, or diagnostics. Those assets are represented only in
-`manifest.json` with `parseStatus: "empty"`, `reason: "no_semantic_content"`,
-and `output: null`. An explicitly requested `to-llm-json` call still returns
-the empty document.
+call edges, or diagnostics, unless those assets carry `defaultValues` from a
+`--defaults` run. Without `--defaults`, a graph-less property-only asset is
+recorded in `manifest.json` with `parseStatus: "empty"`, `reason:
+"no_semantic_content"`, and `output: null`. With `--defaults`, the same asset
+gains a `defaultValues` list, becomes semantically non-empty, and produces a
+document. An explicitly requested `to-llm-json` call still returns the empty
+document when `--defaults` is not passed.
