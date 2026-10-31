@@ -17,6 +17,18 @@ Object) property values — the serialized defaults an actor or behavior initial
 itself to. This lets graph-less, property-only assets (for example utility AI
 behavior blueprints) still surface their configuration.
 
+Component and subobject defaults are included too: serialized component template
+exports (capsules, SCS component templates, construction-script components) and
+instanced subobjects referenced by the CDO (for example an AI action or target
+generator instance) are emitted with component-qualified names:
+
+```json
+{"name": "A_MoveTo_C_0.Acceptance Radius", "type": "Float", "value": "150"}
+```
+
+Blueprint plumbing (SimpleConstructionScript, SCS_Node, the Blueprint marker
+itself), empty templates, and serialized null/zero values are skipped.
+
 ## Asset summary
 
 ```json
@@ -91,7 +103,9 @@ flattened recursively and object references are resolved to readable names:
       "value": "[UtilityAI_Consideration(Name=Prefer further if close, Input=I_Distance_0, Curve=UtilityAI_Curve(m=0.4, k=1, c=0, b=0.6, Type=EUtilityAI_Curve::Linear)), ...]"
     },
     {"name": "Action", "type": "Object", "value": "A_MoveTo_C_0"},
-    {"name": "TargetGenerator", "type": "Object", "value": "TG_PointsAroundActorsWithAITag_0"}
+    {"name": "TargetGenerator", "type": "Object", "value": "TG_PointsAroundActorsWithAITag_0"},
+    {"name": "A_MoveTo_C_0.Acceptance Radius", "type": "Float", "value": "150"},
+    {"name": "TG_PointsAroundActorsWithAITag_0.SpaceBetween", "type": "Float", "value": "500"}
   ]
 }
 ```

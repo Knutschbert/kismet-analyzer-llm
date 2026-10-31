@@ -124,8 +124,10 @@ set KISMET_ANALYZER_EXE=P:\other\build\kismet-analyzer.exe
 
 To also dump each asset's CDO default values (for graph-less, property-only
 assets like utility AI behaviors), set `KISMET_LLM_DEFAULTS=1` for the session.
-Without it, default values are not emitted and output is identical to earlier
-versions.
+Default values include component and subobject defaults (component-qualified
+names like `A_MoveTo_C_0.Acceptance Radius`); Blueprint plumbing, empty
+templates, and serialized null/zero values are skipped. Without the flag, default
+values are not emitted and output is identical to earlier versions.
 
 ```bat
 set KISMET_LLM_DEFAULTS=1
