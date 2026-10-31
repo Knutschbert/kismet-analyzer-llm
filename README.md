@@ -1,11 +1,13 @@
 # kismet-analyzer LLM workspace
 
 This directory is a working area for presenting cooked Unreal assets to an LLM
-and for a future MCP integration.
+and for the MCP server built on that output.
 
 ## Contents
 
 - [`docs/`](docs/) - MCP design, semantic graph schema, and LLM context guidance
+- [`mcp_server/`](mcp_server/) - read-only MCP server over the generated
+  semantic JSON (see [`mcp_server/README.md`](mcp_server/README.md))
 - [`bin/`](bin/) - portable release payload used by the batch scripts
 - [`output/BaseSpawner/`](output/BaseSpawner/) - example UE4.25 outputs for
   `BaseSpawner.uasset`
@@ -14,6 +16,8 @@ and for a future MCP integration.
   asset directory recursively
 - [`scripts/produce-llm.bat`](scripts/produce-llm.bat) - produce semantic LLM
   JSON for one asset or an entire asset directory
+- [`scripts/run-mcp.bat`](scripts/run-mcp.bat) - start the MCP server against
+  the generated tree
 
 ## Analyzer binary
 
@@ -142,6 +146,12 @@ An MCP server should expose it with progressive disclosure:
 2. Retrieve the call graph around a relevant function.
 3. Retrieve control-flow blocks only when needed.
 4. Fall back to filtered raw JSON or text CFG output for forensic detail.
+
+A working server lives in [`mcp_server/`](mcp_server/) — run it with
+`scripts\run-mcp.bat` (Windows) or `KISMET_LLM_DATA=output/generated/tree/TBL
+python3 -m mcp_server.server` from this directory. Its tools, defaults, and
+verification steps are documented in
+[`mcp_server/README.md`](mcp_server/README.md).
 
 The existing formats have different roles:
 
