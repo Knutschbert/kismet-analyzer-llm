@@ -12,6 +12,8 @@ and for a future MCP integration.
 - [`scripts/produce-asset.bat`](scripts/produce-asset.bat) - process one asset
 - [`scripts/produce-tree.bat`](scripts/produce-tree.bat) - process a complete
   asset directory recursively
+- [`scripts/produce-llm.bat`](scripts/produce-llm.bat) - produce semantic LLM
+  JSON for one asset or an entire asset directory
 
 ## Analyzer binary
 
@@ -86,3 +88,26 @@ automatically by the analyzer when they are beside their `.uasset` files.
 
 The tree script processes assets one at a time and continues after an asset
 fails. A summary of failures is printed at the end.
+
+## Produce semantic LLM JSON
+
+Use `scripts\produce-llm.bat` for the compact model-facing format:
+
+- Drop one `.uasset` or `.umap` file onto it to create `<Asset>.llm.json`.
+- Drop an unpacked asset folder onto it to create per-asset `.llm.json` files
+  and `manifest.json` recursively.
+
+Examples:
+
+```bat
+scripts\produce-llm.bat "P:\path\to\BaseSpawner.uasset"
+scripts\produce-llm.bat "P:\path\to\unpacked-assets" "P:\path\to\llm-output"
+```
+
+The wrapper uses `bin\kismet-analyzer.exe` and defaults to `VER_UE4_25`. You
+can override these for a session:
+
+```bat
+set KISMET_UE_VERSION=VER_UE4_27
+set KISMET_ANALYZER_EXE=P:\other\build\kismet-analyzer.exe
+```
