@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sqlite3
 import sys
 from pathlib import Path
 from typing import Any
@@ -36,9 +37,15 @@ class Catalog:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
         self.manifest_path = self.root / "manifest.json"
+        configured_index = os.environ.get("KISMET_MCP_INDEX")
+        self.index_path = Path(configured_index).expanduser() if configured_index else self.root / ".mcp-index.sqlite3"
         self.entries: list[dict[str, Any]] = []
         self.by_asset: dict[str, dict[str, Any]] = {}
         self.refresh()
+
+    @staticmethod
+    def workspace_root() -> Path:
+        return Path(__file__).resolve().parent.parent
 
     def refresh(self) -> None:
         if not self.manifest_path.is_file():
@@ -50,31 +57,144 @@ class Catalog:
             for entry in self.entries
             if entry.get("asset")
         }
+        self.refresh_index()
+
+    def refresh_index(self) -> None:
+        """Build or refresh the local SQLite catalog when the manifest changes."""
+        self.index_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_mtime = self.manifest_path.stat().st_mtime_ns
+        with sqlite3.connect(self.index_path) as db:
+            db.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS assets (
+                    asset TEXT PRIMARY KEY, class TEXT, output TEXT, parse_status TEXT,
+                    reason TEXT, functions TEXT NOT NULL, properties TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS functions (
+                    asset TEXT NOT NULL, name TEXT NOT NULL, calls TEXT NOT NULL,
+                    reads TEXT NOT NULL, writes TEXT NOT NULL, branches INTEGER NOT NULL,
+                    diagnostics TEXT NOT NULL, PRIMARY KEY(asset, name)
+                );
+                CREATE TABLE IF NOT EXISTS references_index (
+                    asset TEXT NOT NULL, function TEXT NOT NULL, target TEXT NOT NULL,
+                    kind TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS references_target ON references_index(target);
+                """
+            )
+            previous = db.execute("SELECT value FROM meta WHERE key = 'manifest_mtime'").fetchone()
+            if previous and previous[0] == str(manifest_mtime):
+                return
+
+            db.execute("DELETE FROM assets")
+            db.execute("DELETE FROM functions")
+            db.execute("DELETE FROM references_index")
+            for entry in self.entries:
+                asset = entry.get("asset", "")
+                output = entry.get("output")
+                document: dict[str, Any] = {}
+                if output:
+                    try:
+                        document = self._load_output(output)
+                    except (OSError, ValueError, json.JSONDecodeError) as exc:
+                        LOGGER.warning("Unable to index %s: %s", asset, exc)
+
+                properties = document.get("properties", [])
+                functions = document.get("functions", [])
+                entry["_properties"] = properties
+                db.execute(
+                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        asset,
+                        entry.get("class") or document.get("class"),
+                        output,
+                        entry.get("parseStatus", document.get("parseStatus", "unknown")),
+                        entry.get("reason"),
+                        json.dumps(entry.get("functions", [f.get("name") for f in functions])),
+                        json.dumps(properties),
+                    ),
+                )
+                for function in functions:
+                    name = function.get("name", "")
+                    calls = function.get("calls", [])
+                    db.execute(
+                        "INSERT OR REPLACE INTO functions VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            asset,
+                            name,
+                            json.dumps(calls),
+                            json.dumps(function.get("reads", [])),
+                            json.dumps(function.get("writes", [])),
+                            int(function.get("branches", 0)),
+                            json.dumps(function.get("diagnostics", [])),
+                        ),
+                    )
+                    for target in calls:
+                        db.execute(
+                            "INSERT INTO references_index VALUES (?, ?, ?, ?)",
+                            (asset, name, target, "function_call"),
+                        )
+                    for target in function.get("reads", []):
+                        db.execute(
+                            "INSERT INTO references_index VALUES (?, ?, ?, ?)",
+                            (asset, name, target, "property_read"),
+                        )
+                    for target in function.get("writes", []):
+                        db.execute(
+                            "INSERT INTO references_index VALUES (?, ?, ?, ?)",
+                            (asset, name, target, "property_write"),
+                        )
+            db.execute(
+                "INSERT INTO meta(key, value) VALUES('manifest_mtime', ?) "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                (str(manifest_mtime),),
+            )
+            db.commit()
+
+    def _load_output(self, output: str) -> dict[str, Any]:
+        path = (self.root / output).resolve()
+        if self.root not in path.parents:
+            raise ValueError("Indexed output escapes the catalog root")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def index_stats(self) -> dict[str, int]:
+        with sqlite3.connect(self.index_path) as db:
+            assets = db.execute("SELECT COUNT(*) FROM assets").fetchone()[0]
+            semantic = db.execute("SELECT COUNT(*) FROM assets WHERE output IS NOT NULL").fetchone()[0]
+            functions = db.execute("SELECT COUNT(*) FROM functions").fetchone()[0]
+            references = db.execute("SELECT COUNT(*) FROM references_index").fetchone()[0]
+        return {"assets": assets, "semanticAssets": semantic, "functions": functions, "references": references}
 
     @staticmethod
     def _normalize(asset: str) -> str:
         return asset.replace("\\", "/").lstrip("/").casefold()
 
     def find_assets(self, query: str, limit: int, offset: int = 0) -> dict[str, Any]:
-        needle = query.casefold().strip()
-        matches = []
-        for entry in self.entries:
-            haystack = " ".join(
-                [
-                    str(entry.get("asset", "")),
-                    str(entry.get("class", "")),
-                    " ".join(entry.get("functions", [])),
-                ]
-            ).casefold()
-            if not needle or needle in haystack:
-                matches.append(self._manifest_summary(entry))
-
-        page = matches[offset : offset + limit]
-        next_offset = offset + limit if offset + limit < len(matches) else None
+        needle = f"%{query.casefold().strip()}%"
+        expression = "lower(asset || ' ' || ifnull(class, '') || ' ' || functions || ' ' || properties) LIKE ?"
+        with sqlite3.connect(self.index_path) as db:
+            count = db.execute(f"SELECT COUNT(*) FROM assets WHERE {expression}", (needle,)).fetchone()[0]
+            rows = db.execute(
+                f"SELECT asset, class, output, parse_status, functions FROM assets WHERE {expression} "
+                "ORDER BY asset LIMIT ? OFFSET ?",
+                (needle, limit, offset),
+            ).fetchall()
+        page = [
+            {
+                "asset": asset,
+                "class": class_name,
+                "functions": json.loads(functions),
+                "parseStatus": parse_status,
+                "hasSemanticOutput": bool(output),
+            }
+            for asset, class_name, output, parse_status, functions in rows
+        ]
+        next_offset = offset + limit if offset + limit < count else None
         return {
             "query": query,
             "results": page,
-            "count": len(matches),
+            "count": count,
             "nextOffset": next_offset,
         }
 
@@ -103,6 +223,25 @@ class Catalog:
         if not path.is_file():
             raise FileNotFoundError(f"Indexed semantic document not found: {path}")
         return json.loads(path.read_text(encoding="utf-8"))
+
+    def find_references(self, query: str, limit: int) -> dict[str, Any]:
+        needle = f"%{query.casefold()}%"
+        with sqlite3.connect(self.index_path) as db:
+            rows = db.execute(
+                "SELECT asset, function, target, kind FROM references_index "
+                "WHERE lower(target) LIKE ? OR lower(asset) LIKE ? OR lower(function) LIKE ? "
+                "ORDER BY asset, function, target LIMIT ?",
+                (needle, needle, needle, limit),
+            ).fetchall()
+        return {
+            "query": query,
+            "results": [
+                {"asset": asset, "function": function, "target": target, "kind": kind}
+                for asset, function, target, kind in rows
+            ],
+            "limit": limit,
+            "truncated": len(rows) == limit,
+        }
 
     @staticmethod
     def _manifest_summary(entry: dict[str, Any]) -> dict[str, Any]:
@@ -149,7 +288,11 @@ TOOLS = [
         "description": "Get concise semantic metadata, properties, functions, and diagnostics for one asset.",
         "inputSchema": {
             "type": "object",
-            "properties": {"asset": {"type": "string", "description": "Indexed asset path."}},
+            "properties": {
+                "asset": {"type": "string", "description": "Indexed asset path."},
+                "maxProperties": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
+                "maxFunctions": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
+            },
             "required": ["asset"],
         },
     },
@@ -166,6 +309,94 @@ TOOLS = [
             },
             "required": ["asset", "function"],
         },
+    },
+    {
+        "name": "find_references",
+        "description": "Find function-call and property read/write references in the indexed semantic catalog.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "limit": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": DEFAULT_LIMIT},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "get_catalog_stats",
+        "description": "Return counts for the loaded asset catalog and semantic index.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_call_graph",
+        "description": "Traverse bounded local function callers/callees for one asset.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset": {"type": "string"},
+                "function": {"type": "string"},
+                "direction": {"type": "string", "enum": ["callees", "callers", "both"], "default": "callees"},
+                "maxDepth": {"type": "integer", "minimum": 0, "maximum": 5, "default": 2},
+                "maxNodes": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 30},
+            },
+            "required": ["asset", "function"],
+        },
+    },
+    {
+        "name": "get_control_flow",
+        "description": "Return bounded CFG blocks and successors for one function.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset": {"type": "string"},
+                "function": {"type": "string"},
+                "maxBlocks": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 20},
+            },
+            "required": ["asset", "function"],
+        },
+    },
+    {
+        "name": "trace_behavior",
+        "description": "Find candidate legacy assets/functions and return bounded behavior evidence.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "asset": {"type": "string"},
+                "function": {"type": "string"},
+                "maxDepth": {"type": "integer", "minimum": 0, "maximum": 5, "default": 2},
+                "maxNodes": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 20},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "compare_assets",
+        "description": "Compare two semantic assets by class, properties, functions, calls, and diagnostics.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"left": {"type": "string"}, "right": {"type": "string"}},
+            "required": ["left", "right"],
+        },
+    },
+    {
+        "name": "get_implementation_spec",
+        "description": "Derive an evidence-backed implementation specification for recreating one legacy function in a new actor.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset": {"type": "string"},
+                "function": {"type": "string"},
+                "targetActor": {"type": "string"},
+                "maxBlocks": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 20},
+            },
+            "required": ["asset", "function"],
+        },
+    },
+    {
+        "name": "refresh_catalog",
+        "description": "Refresh the local SQLite index from the configured manifest.",
+        "inputSchema": {"type": "object", "properties": {}},
     },
 ]
 
@@ -187,6 +418,10 @@ class McpServer:
         if name == "get_asset_summary":
             asset = str(arguments.get("asset", ""))
             document = self.catalog.load_asset(asset)
+            max_properties = bounded_limit(arguments.get("maxProperties", 50))
+            max_functions = bounded_limit(arguments.get("maxFunctions", 50))
+            properties = document.get("properties", [])
+            functions = document.get("functions", [])
             return _json_result(
                 {
                     "schemaVersion": document.get("schemaVersion"),
@@ -195,7 +430,8 @@ class McpServer:
                     "parent": document.get("parent"),
                     "engineVersion": document.get("engineVersion"),
                     "parseStatus": document.get("parseStatus"),
-                    "properties": document.get("properties", []),
+                    "properties": properties[:max_properties],
+                    "propertiesTruncated": len(properties) > max_properties,
                     "functions": [
                         {
                             "name": function.get("name"),
@@ -205,8 +441,9 @@ class McpServer:
                             "branches": function.get("branches", 0),
                             "diagnostics": function.get("diagnostics", []),
                         }
-                        for function in document.get("functions", [])
+                        for function in functions[:max_functions]
                     ],
+                    "functionsTruncated": len(functions) > max_functions,
                     "callEdges": document.get("callEdges", []),
                     "diagnostics": document.get("diagnostics", []),
                 }
@@ -229,6 +466,204 @@ class McpServer:
                 result["blocks"] = result.get("blocks", [])[: bounded_limit(arguments.get("maxBlocks"))]
             result["asset"] = document.get("asset", asset)
             return _json_result(result)
+
+        if name == "get_control_flow":
+            asset = str(arguments.get("asset", ""))
+            function_name = str(arguments.get("function", ""))
+            document = self.catalog.load_asset(asset)
+            function = next(
+                (item for item in document.get("functions", []) if item.get("name", "").casefold() == function_name.casefold()),
+                None,
+            )
+            if function is None:
+                raise KeyError(f"Function is not indexed on asset: {function_name}")
+            blocks = function.get("blocks", [])
+            limit = bounded_limit(arguments.get("maxBlocks"))
+            return _json_result(
+                {
+                    "asset": document.get("asset", asset),
+                    "function": function.get("name"),
+                    "blocks": blocks[:limit],
+                    "truncated": len(blocks) > limit,
+                    "diagnostics": function.get("diagnostics", []),
+                }
+            )
+
+        if name == "get_call_graph":
+            asset = str(arguments.get("asset", ""))
+            root_name = str(arguments.get("function", ""))
+            direction = str(arguments.get("direction", "callees"))
+            max_depth = max(0, min(int(arguments.get("maxDepth", 2)), 5))
+            max_nodes = bounded_limit(arguments.get("maxNodes", 30))
+            document = self.catalog.load_asset(asset)
+            functions = {item.get("name", ""): item for item in document.get("functions", [])}
+            root = next((name for name in functions if name.casefold() == root_name.casefold()), None)
+            if root is None:
+                raise KeyError(f"Function is not indexed on asset: {root_name}")
+            outgoing = {name: [call for call in item.get("calls", []) if call in functions] for name, item in functions.items()}
+            incoming = {name: [] for name in functions}
+            for source, targets in outgoing.items():
+                for target in targets:
+                    incoming[target].append(source)
+            seen = {root}
+            frontier = [(root, 0)]
+            edges = []
+            while frontier and len(seen) <= max_nodes:
+                current, depth = frontier.pop(0)
+                if depth >= max_depth:
+                    continue
+                targets = []
+                if direction in ("callees", "both"):
+                    targets.extend((target, "callee") for target in outgoing[current])
+                if direction in ("callers", "both"):
+                    targets.extend((target, "caller") for target in incoming[current])
+                for target, kind in targets:
+                    edges.append({"from": current, "to": target, "kind": kind})
+                    if target not in seen and len(seen) < max_nodes:
+                        seen.add(target)
+                        frontier.append((target, depth + 1))
+            return _json_result(
+                {
+                    "asset": document.get("asset", asset),
+                    "root": root,
+                    "direction": direction,
+                    "nodes": sorted(seen),
+                    "edges": edges,
+                    "truncated": bool(frontier) or len(seen) >= max_nodes,
+                }
+            )
+
+        if name == "trace_behavior":
+            query = str(arguments.get("query", ""))
+            candidates: list[dict[str, Any]] = []
+            requested_asset = arguments.get("asset")
+            if requested_asset:
+                entry = self.catalog.get_entry(str(requested_asset))
+                if entry:
+                    candidates.append(self.catalog._manifest_summary(entry))
+            else:
+                candidates = self.catalog.find_assets(query, bounded_limit(arguments.get("maxNodes", 20)))["results"]
+
+            evidence = []
+            requested_function = arguments.get("function")
+            for candidate in candidates:
+                asset = candidate.get("asset")
+                functions = candidate.get("functions", [])
+                function = str(requested_function or (functions[0] if functions else ""))
+                if not function:
+                    continue
+                try:
+                    document = self.catalog.load_asset(asset)
+                    selected = next(
+                        (item for item in document.get("functions", []) if item.get("name", "").casefold() == function.casefold()),
+                        None,
+                    )
+                    if selected:
+                        graph = self.call_tool(
+                            "get_call_graph",
+                            {
+                                "asset": asset,
+                                "function": selected.get("name"),
+                                "maxDepth": arguments.get("maxDepth", 2),
+                                "maxNodes": arguments.get("maxNodes", 20),
+                            },
+                        )["structuredContent"]
+                        evidence.append(
+                            {
+                                "asset": asset,
+                                "class": document.get("class"),
+                                "function": selected.get("name"),
+                                "calls": selected.get("calls", []),
+                                "reads": selected.get("reads", []),
+                                "writes": selected.get("writes", []),
+                                "graph": graph,
+                                "diagnostics": selected.get("diagnostics", []),
+                            }
+                        )
+                except (KeyError, FileNotFoundError, ValueError):
+                    continue
+            return _json_result({"query": query, "candidates": candidates, "evidence": evidence})
+
+        if name == "compare_assets":
+            left_name = str(arguments.get("left", ""))
+            right_name = str(arguments.get("right", ""))
+            left = self.catalog.load_asset(left_name)
+            right = self.catalog.load_asset(right_name)
+
+            def names(items: list[dict[str, Any]]) -> set[str]:
+                return {str(item.get("name", "")) for item in items}
+
+            left_functions = names(left.get("functions", []))
+            right_functions = names(right.get("functions", []))
+            left_properties = names(left.get("properties", []))
+            right_properties = names(right.get("properties", []))
+            return _json_result(
+                {
+                    "left": left.get("asset", left_name),
+                    "right": right.get("asset", right_name),
+                    "classes": {"left": left.get("class"), "right": right.get("class"), "same": left.get("class") == right.get("class")},
+                    "functions": {
+                        "shared": sorted(left_functions & right_functions),
+                        "leftOnly": sorted(left_functions - right_functions),
+                        "rightOnly": sorted(right_functions - left_functions),
+                    },
+                    "properties": {
+                        "shared": sorted(left_properties & right_properties),
+                        "leftOnly": sorted(left_properties - right_properties),
+                        "rightOnly": sorted(right_properties - left_properties),
+                    },
+                    "parseStatus": {"left": left.get("parseStatus"), "right": right.get("parseStatus")},
+                }
+            )
+
+        if name == "get_implementation_spec":
+            asset = str(arguments.get("asset", ""))
+            function_name = str(arguments.get("function", ""))
+            document = self.catalog.load_asset(asset)
+            function = next(
+                (item for item in document.get("functions", []) if item.get("name", "").casefold() == function_name.casefold()),
+                None,
+            )
+            if function is None:
+                raise KeyError(f"Function is not indexed on asset: {function_name}")
+            graph = self.call_tool(
+                "get_call_graph",
+                {"asset": asset, "function": function.get("name"), "maxDepth": 2, "maxNodes": 30},
+            )["structuredContent"]
+            blocks = function.get("blocks", [])
+            max_blocks = bounded_limit(arguments.get("maxBlocks", 20))
+            return _json_result(
+                {
+                    "source": {"asset": document.get("asset", asset), "function": function.get("name")},
+                    "targetActor": arguments.get("targetActor"),
+                    "implementation": {
+                        "lifecycleEntry": function.get("name"),
+                        "requiredStateReads": function.get("reads", []),
+                        "requiredStateWrites": function.get("writes", []),
+                        "callsToRecreateOrAdapt": function.get("calls", []),
+                        "branchCount": function.get("branches", 0),
+                        "controlFlow": blocks[:max_blocks],
+                        "controlFlowTruncated": len(blocks) > max_blocks,
+                        "callGraph": graph,
+                    },
+                    "diagnostics": function.get("diagnostics", []) + document.get("diagnostics", []),
+                    "verification": [
+                        "Confirm imported calls exist or provide replacements.",
+                        "Validate read/write state names against the target actor.",
+                        "Test branch behavior using equivalent gameplay inputs.",
+                    ],
+                }
+            )
+
+        if name == "find_references":
+            return _json_result(self.catalog.find_references(str(arguments.get("query", "")), bounded_limit(arguments.get("limit"))))
+
+        if name == "get_catalog_stats":
+            return _json_result({"catalog": str(self.catalog.root), "index": str(self.catalog.index_path), **self.catalog.index_stats()})
+
+        if name == "refresh_catalog":
+            self.catalog.refresh()
+            return _json_result({"refreshed": True, **self.catalog.index_stats()})
 
         raise KeyError(f"Unknown tool: {name}")
 

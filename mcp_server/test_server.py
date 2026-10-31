@@ -51,7 +51,16 @@ class ServerTests(unittest.TestCase):
                             "branches": 0,
                             "blocks": [{"id": 0, "code": ["call Initialize"], "successors": []}],
                             "diagnostics": [],
-                        }
+                        },
+                        {
+                            "name": "Initialize",
+                            "calls": [],
+                            "reads": [],
+                            "writes": [],
+                            "branches": 0,
+                            "blocks": [{"id": 0, "code": ["return"], "successors": []}],
+                            "diagnostics": [],
+                        },
                     ],
                     "properties": [],
                     "callEdges": [{"from": "BeginPlay", "to": "Initialize"}],
@@ -80,6 +89,14 @@ class ServerTests(unittest.TestCase):
             {"asset": "Content/BP_Test.uasset", "function": "BeginPlay", "includeBlocks": True},
         )
         self.assertEqual(len(detailed["structuredContent"]["blocks"]), 1)
+
+    def test_call_graph_and_reference_search(self):
+        graph = self.server.call_tool(
+            "get_call_graph", {"asset": "Content/BP_Test.uasset", "function": "BeginPlay"}
+        )
+        self.assertIn("Initialize", graph["structuredContent"]["nodes"])
+        refs = self.server.call_tool("find_references", {"query": "Health"})
+        self.assertEqual(refs["structuredContent"]["results"][0]["kind"], "property_read")
 
 
 if __name__ == "__main__":

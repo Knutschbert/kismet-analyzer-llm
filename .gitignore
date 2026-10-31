@@ -5,6 +5,8 @@
 **/*-outputs/
 **/*-kismet-output/
 /output/generated/
+.mcp/
+*.sqlite3
 
 # Local scratch/test output.
 /test-output/
