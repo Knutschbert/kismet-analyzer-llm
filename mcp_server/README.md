@@ -25,6 +25,34 @@ output/generated/tree/TBL
 
 Override it with `KISMET_LLM_DATA` when serving another game or generated tree.
 
+## Performance and data location
+
+The catalog cost is dominated by filesystem latency, not parsing. Measured on
+the 52k-asset TBL tree (7,497 semantic docs):
+
+| Data + index location | Index rebuild | `find_assets` | `get_asset_summary` |
+| --- | --- | --- | --- |
+| Windows drive over WSL 9p (`/mnt/p`) | ~150 s | ~19 s/call | ~32 ms |
+| WSL-native filesystem (ext4) | ~7 s | ~0.2–0.6 s/call | ~0.4 ms |
+
+The 9p numbers come from per-path `lstat`/`stat` round trips (the index rebuild
+walks every doc) and from SQLite journal I/O on every query. **Keep the
+generated tree and its SQLite index on the native filesystem**: sync the tree
+with `scripts/sync-tree-wsl.sh` (Windows drive → `~/kismet-llm-data/`), then
+point `KISMET_LLM_DATA` at the copy. `KISMET_LLM_DATA` accepts any path, so the
+same server configuration works for either location. The `find_assets` range
+depends on the needle: text matching early in a row's blob (asset, class,
+function names) exits rows quickly; text that only appears deep in
+`defaultValues` JSON scans the full ~520 MB search text.
+
+The SQLite index is a derived cache (`.mcp-index.sqlite3` inside the data root
+by default; override with `KISMET_MCP_INDEX`). It rebuilds automatically when
+the manifest mtime or the index schema version changes — schema version 2 added
+the precomputed lowercase `search` column that `find_assets` scans (one text
+scan per call instead of re-concatenating every row's JSON per query, and no
+separate `COUNT` rescan). The index roughly doubles in size to hold the
+lowercase search text.
+
 ## Initial tools
 
 - `find_assets` searches asset paths, classes, function names, property names,

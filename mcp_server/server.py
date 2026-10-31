@@ -20,6 +20,9 @@ from typing import Any
 LOGGER = logging.getLogger("kismet-analyzer-mcp")
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 100
+# Bump when the index schema changes; a mismatched index is wiped and rebuilt.
+# 2: adds the precomputed lowercase `search` column for find_assets.
+SCHEMA_VERSION = "2"
 
 
 def _json_result(value: Any) -> dict[str, Any]:
@@ -60,17 +63,21 @@ class Catalog:
         self.refresh_index()
 
     def refresh_index(self) -> None:
-        """Build or refresh the local SQLite catalog when the manifest changes."""
+        """Build or refresh the local SQLite catalog when the manifest or schema changes."""
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_mtime = self.manifest_path.stat().st_mtime_ns
         with sqlite3.connect(self.index_path) as db:
+            # The index is a derived cache that is cheap to rebuild; durable
+            # writes only add latency on slow mounts.
+            db.execute("PRAGMA synchronous=OFF")
             db.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS assets (
                     asset TEXT PRIMARY KEY, class TEXT, output TEXT, parse_status TEXT,
                     reason TEXT, functions TEXT NOT NULL, properties TEXT NOT NULL,
-                    default_values TEXT NOT NULL DEFAULT '[]'
+                    default_values TEXT NOT NULL DEFAULT '[]',
+                    search TEXT NOT NULL DEFAULT ''
                 );
                 CREATE TABLE IF NOT EXISTS functions (
                     asset TEXT NOT NULL, name TEXT NOT NULL, calls TEXT NOT NULL,
@@ -84,10 +91,18 @@ class Catalog:
                 CREATE INDEX IF NOT EXISTS references_target ON references_index(target);
                 """
             )
-            # Migration: older index files lack the default_values column.
-            columns = {row[1] for row in db.execute("PRAGMA table_info(assets)").fetchall()}
-            if "default_values" not in columns:
-                db.execute("ALTER TABLE assets ADD COLUMN default_values TEXT NOT NULL DEFAULT '[]'")
+            # Rebuild whenever the index schema is outdated: wiping and
+            # re-deriving is cheaper and safer than in-place backfills.
+            version = db.execute("SELECT value FROM meta WHERE key = 'schema_version'").fetchone()
+            if not version or version[0] != SCHEMA_VERSION:
+                db.execute("DELETE FROM assets")
+                db.execute("DELETE FROM functions")
+                db.execute("DELETE FROM references_index")
+                db.execute(
+                    "INSERT INTO meta(key, value) VALUES('schema_version', ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (SCHEMA_VERSION,),
+                )
 
             previous = db.execute("SELECT value FROM meta WHERE key = 'manifest_mtime'").fetchone()
             if previous and previous[0] == str(manifest_mtime):
@@ -111,17 +126,26 @@ class Catalog:
                 default_values = document.get("defaultValues", [])
                 entry["_properties"] = properties
                 entry["_default_values"] = default_values
+                functions_blob = json.dumps(entry.get("functions", [f.get("name") for f in functions]))
+                properties_blob = json.dumps(properties)
+                defaults_blob = json.dumps(default_values)
+                class_name = entry.get("class") or document.get("class") or ""
+                # Precomputed lowercase search text: find_assets scans this
+                # column directly instead of re-concatenating and lowercasing
+                # every row's full JSON text per query.
+                search_blob = f"{asset} {class_name} {functions_blob} {properties_blob} {defaults_blob}".lower()
                 db.execute(
-                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         asset,
-                        entry.get("class") or document.get("class"),
+                        class_name,
                         output,
                         entry.get("parseStatus", document.get("parseStatus", "unknown")),
                         entry.get("reason"),
-                        json.dumps(entry.get("functions", [f.get("name") for f in functions])),
-                        json.dumps(properties),
-                        json.dumps(default_values),
+                        functions_blob,
+                        properties_blob,
+                        defaults_blob,
+                        search_blob,
                     ),
                 )
                 for function in functions:
@@ -162,10 +186,15 @@ class Catalog:
             db.commit()
 
     def _load_output(self, output: str) -> dict[str, Any]:
-        path = (self.root / output).resolve()
-        if self.root not in path.parents:
+        # normpath instead of resolve(): resolve() lstats every path component,
+        # which costs minutes across thousands of docs on slow mounts (9p).
+        # The generated tree contains no symlinks, so a lexical containment
+        # check is sufficient here.
+        path = os.path.normpath(self.root / output)
+        root = str(self.root)
+        if not path.startswith(root + os.sep):
             raise ValueError("Indexed output escapes the catalog root")
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(Path(path).read_text(encoding="utf-8"))
 
     def index_stats(self) -> dict[str, int]:
         with sqlite3.connect(self.index_path) as db:
@@ -181,17 +210,26 @@ class Catalog:
 
     def find_assets(self, query: str, limit: int, offset: int = 0) -> dict[str, Any]:
         needle = f"%{query.casefold().strip()}%"
-        expression = (
-            "lower(asset || ' ' || ifnull(class, '') || ' ' || functions || ' ' || properties"
-            " || ' ' || ifnull(default_values, '')) LIKE ?"
-        )
         with sqlite3.connect(self.index_path) as db:
-            count = db.execute(f"SELECT COUNT(*) FROM assets WHERE {expression}", (needle,)).fetchone()[0]
-            rows = db.execute(
-                f"SELECT asset, class, output, parse_status, functions, default_values FROM assets WHERE {expression} "
-                "ORDER BY asset LIMIT ? OFFSET ?",
-                (needle, limit, offset),
-            ).fetchall()
+            # One text scan per call: collect the matching keys, then
+            # detail-fetch only the requested page by primary key. A separate
+            # COUNT(*) would rescan the full search text a second time.
+            keys = [
+                row[0]
+                for row in db.execute(
+                    "SELECT asset FROM assets WHERE search LIKE ? ORDER BY asset", (needle,)
+                ).fetchall()
+            ]
+            count = len(keys)
+            rows: list[tuple[Any, ...]] = []
+            page_keys = keys[offset : offset + limit]
+            if page_keys:
+                placeholders = ",".join("?" * len(page_keys))
+                rows = db.execute(
+                    "SELECT asset, class, output, parse_status, functions, default_values "
+                    f"FROM assets WHERE asset IN ({placeholders}) ORDER BY asset",
+                    page_keys,
+                ).fetchall()
         page = [
             {
                 "asset": asset,

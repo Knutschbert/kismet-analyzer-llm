@@ -16,6 +16,8 @@ and for the MCP server built on that output.
   asset directory recursively
 - [`scripts/produce-llm.bat`](scripts/produce-llm.bat) - produce semantic LLM
   JSON for one asset or an entire asset directory
+- [`scripts/sync-tree-wsl.sh`](scripts/sync-tree-wsl.sh) - copy a generated
+  tree to the WSL-native filesystem for fast MCP catalog calls
 - [`scripts/run-mcp.bat`](scripts/run-mcp.bat) - start the MCP server against
   the generated tree
 
