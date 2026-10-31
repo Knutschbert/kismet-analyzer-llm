@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "kismet_llm",
+  "project_id": "6c66b190-151b-40b3-b4f5-4d174d418780"
+}
