@@ -111,3 +111,28 @@ can override these for a session:
 set KISMET_UE_VERSION=VER_UE4_27
 set KISMET_ANALYZER_EXE=P:\other\build\kismet-analyzer.exe
 ```
+
+## MCP guidance
+
+Use the **compact semantic JSON graph** as the canonical model-facing format.
+An MCP server should expose it with progressive disclosure:
+
+1. Return a small asset summary first.
+2. Retrieve the call graph around a relevant function.
+3. Retrieve control-flow blocks only when needed.
+4. Fall back to filtered raw JSON or text CFG output for forensic detail.
+
+The existing formats have different roles:
+
+| Format | Recommended role |
+| --- | --- |
+| Semantic JSON graph | Primary MCP response and index format |
+| `gen-cfg` `.txt` | Human-readable behavior/evidence view |
+| UAssetAPI JSON | Exact parser/object dump and round-trip input |
+| DOT/SVG/HTML | Human visualization |
+
+See [`docs/schema.md`](docs/schema.md) for the response structure and
+[`docs/mcp-design.md`](docs/mcp-design.md) for MCP tools, retrieval levels, and
+context-minimization rules. The semantic export represents recovered Kismet
+bytecode behavior; it is not guaranteed to reproduce the original Blueprint
+editor node graph or layout.
