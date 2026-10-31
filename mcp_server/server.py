@@ -13,7 +13,9 @@ import logging
 import os
 import sqlite3
 import sys
-from concurrent.futures import ThreadPoolExecutor
+import time
+from collections import OrderedDict, deque
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from itertools import islice
 from pathlib import Path
 from typing import Any
@@ -22,10 +24,15 @@ from typing import Any
 LOGGER = logging.getLogger("kismet-analyzer-mcp")
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 100
+# find_assets shards its text scan across this many threads. SQLite releases
+# the GIL during query execution, so parallel rowid-range scans genuinely
+# overlap instead of serializing.
+SCAN_WORKERS = min(8, os.cpu_count() or 1)
 # Bump when the index schema changes; a mismatched index is wiped and rebuilt.
 # 2: adds the precomputed lowercase `search` column for find_assets.
 # 3: adds the `parent` column + index for class-hierarchy queries.
-SCHEMA_VERSION = "3"
+# 4: leaner flattened search blob (name/value text instead of raw JSON).
+SCHEMA_VERSION = "4"
 
 
 def _json_result(value: Any) -> dict[str, Any]:
@@ -37,6 +44,51 @@ def _error_result(message: str) -> dict[str, Any]:
         "isError": True,
         "content": [{"type": "text", "text": message}],
     }
+
+
+def _scan_shard_worker(task: tuple[str, int, int, str]) -> list[str]:
+    """Scan one rowid shard of the search text; runs in a worker process.
+
+    Threads cannot parallelize this scan: the GIL is released per step but
+    the LIKE work and connection locks serialize in practice (measured:
+    4 threads ≈ sequential). Worker processes are the only way to overlap
+    the scan across cores. mmap avoids the per-connection page-cache copy,
+    which alone is worth ~1.5x on a full scan.
+    """
+    index_path, shard_lo, shard_hi, needle = task
+    with sqlite3.connect(index_path) as conn:
+        conn.execute("PRAGMA mmap_size=536870912")
+        return [
+            row[0]
+            for row in conn.execute(
+                "SELECT asset FROM assets WHERE rowid BETWEEN ? AND ? AND search LIKE ?",
+                (shard_lo, shard_hi, needle),
+            ).fetchall()
+        ]
+
+
+def _flatten_value(value: Any, parts: list[str]) -> None:
+    """Collect searchable scalar text from a property/default-value item.
+
+    Strings and numbers are gathered recursively from nested containers while
+    JSON punctuation and repeated structural keys ("name", "type", "value")
+    are dropped. That shrinks the scanned search text — the dominant
+    find_assets cost — without removing any name or value an agent matches
+    against.
+    """
+    if isinstance(value, str):
+        if value:
+            parts.append(value)
+    elif isinstance(value, bool):
+        parts.append(str(value).lower())
+    elif isinstance(value, (int, float)):
+        parts.append(repr(value))
+    elif isinstance(value, dict):
+        for inner in value.values():
+            _flatten_value(inner, parts)
+    elif isinstance(value, (list, tuple)):
+        for inner in value:
+            _flatten_value(inner, parts)
 
 
 SCHEMA = """
@@ -69,6 +121,14 @@ class Catalog:
         self.index_path = Path(configured_index).expanduser() if configured_index else self.root / ".mcp-index.sqlite3"
         self.entries: list[dict[str, Any]] = []
         self.by_asset: dict[str, dict[str, Any]] = {}
+        # LRU of scan results keyed by needle: the index is static between
+        # refreshes and agents retry query variations, so repeats are instant.
+        self._scan_cache: OrderedDict[str, list[str]] = OrderedDict()
+        # Worker processes for the sharded scan; created lazily on the first
+        # parallel scan so small catalogs (and tests) never pay for them.
+        self._scan_pool: ProcessPoolExecutor | None = None
+        # Cached byte-balanced rowid shards for the scan (see _scan_shards).
+        self._scan_bounds: list[tuple[int, int]] | None = None
         self.refresh()
 
     @staticmethod
@@ -76,6 +136,8 @@ class Catalog:
         return Path(__file__).resolve().parent.parent
 
     def refresh(self) -> None:
+        self._scan_cache.clear()
+        self._scan_bounds = None
         if not self.manifest_path.is_file():
             raise FileNotFoundError(f"Manifest not found: {self.manifest_path}")
         manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
@@ -142,15 +204,25 @@ class Catalog:
                 functions_blob = json.dumps(entry.get("functions", [f.get("name") for f in functions]))
                 properties_blob = json.dumps(properties)
                 defaults_blob = json.dumps(default_values)
+                # Flattened name/value text for the search blob instead of raw
+                # JSON: punctuation and repeated structural keys add tens of
+                # percent of scan volume without adding matchable content.
+                property_parts: list[str] = []
+                for item in properties:
+                    _flatten_value(item, property_parts)
+                default_parts: list[str] = []
+                for item in default_values:
+                    _flatten_value(item, default_parts)
                 class_name = entry.get("class") or document.get("class") or ""
                 parent_name = document.get("parent")
                 # Precomputed lowercase search text: find_assets scans this
                 # column directly instead of re-concatenating and lowercasing
                 # every row's full JSON text per query. Parent is included so
                 # searching a parent class name finds its subclasses.
-                search_blob = (
-                    f"{asset} {class_name} {parent_name or ''} "
-                    f"{functions_blob} {properties_blob} {defaults_blob}"
+                search_blob = " ".join(
+                    [asset, class_name, parent_name or "", functions_blob]
+                    + property_parts
+                    + default_parts
                 ).lower()
                 db.execute(
                     "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -255,39 +327,36 @@ class Catalog:
         max_nodes: int = 500,
     ) -> dict[str, Any]:
         needle = f"%{query.casefold().strip()}%"
-        with sqlite3.connect(self.index_path) as db:
-            # One text scan per call: collect the matching keys, then
-            # detail-fetch only the requested page by primary key. A separate
-            # COUNT(*) would rescan the full search text a second time.
-            descendants_truncated = False
-            if include_descendants:
-                # Expand every matched class's subtree in the same pass: the
-                # recursive step resolves children through the parent index.
-                # Fetch one extra row to detect truncation.
+        # One sharded text scan per call: collect the matching keys, then
+        # detail-fetch only the requested page by primary key. A separate
+        # COUNT(*) would rescan the full search text a second time.
+        keys = self._scan_keys(needle)
+        descendants_truncated = False
+        if include_descendants and keys:
+            # Expand every matched class's subtree through the parent index.
+            # Matched keys are staged in a temp table so the recursive CTE
+            # reuses the sharded scan instead of rescanning the search text.
+            # Fetch one extra row to detect truncation.
+            with sqlite3.connect(self.index_path) as db:
+                db.execute("CREATE TEMP TABLE IF NOT EXISTS matched_keys (asset TEXT PRIMARY KEY)")
+                db.execute("DELETE FROM matched_keys")
+                db.executemany("INSERT INTO matched_keys VALUES (?)", [(key,) for key in keys])
                 expanded = db.execute(
                     """
-                    WITH RECURSIVE matched(asset, class) AS (
-                        SELECT asset, class FROM assets WHERE search LIKE ? AND class IS NOT NULL
-                    ),
-                    tree(asset, class) AS (
-                        SELECT asset, class FROM matched
+                    WITH RECURSIVE tree(asset, class) AS (
+                        SELECT asset, class FROM assets
+                        WHERE asset IN (SELECT asset FROM matched_keys)
                         UNION
                         SELECT a.asset, a.class FROM assets a JOIN tree t ON a.parent = t.class
                     )
                     SELECT asset FROM tree ORDER BY asset LIMIT ?
                     """,
-                    (needle, max_nodes + 1),
+                    (max_nodes + 1,),
                 ).fetchall()
-                descendants_truncated = len(expanded) > max_nodes
-                keys = [row[0] for row in expanded[:max_nodes]]
-            else:
-                keys = [
-                    row[0]
-                    for row in db.execute(
-                        "SELECT asset FROM assets WHERE search LIKE ? ORDER BY asset", (needle,)
-                    ).fetchall()
-                ]
-            count = len(keys)
+            descendants_truncated = len(expanded) > max_nodes
+            keys = [row[0] for row in expanded[:max_nodes]]
+        count = len(keys)
+        with sqlite3.connect(self.index_path) as db:
             rows: list[tuple[Any, ...]] = []
             page_keys = keys[offset : offset + limit]
             if page_keys:
@@ -304,7 +373,11 @@ class Catalog:
                 "functions": json.loads(functions),
                 "parseStatus": parse_status,
                 "hasSemanticOutput": bool(output),
-                "hasDefaultValues": bool(json.loads(default_values)),
+                # default_values is a JSON array; '[]' means empty. Do NOT
+                # json.loads it here: Falmire-scale map rows carry
+                # multi-megabyte default blobs and parsing them per page row
+                # dominated cached-call latency.
+                "hasDefaultValues": default_values not in ("", "[]", "null"),
             }
             for asset, class_name, output, parse_status, functions, default_values in rows
         ]
@@ -318,6 +391,80 @@ class Catalog:
         if include_descendants:
             result["descendantsTruncated"] = descendants_truncated
         return result
+
+    def _scan_shards(self) -> list[tuple[int, int]]:
+        """Rowid ranges balanced by search-text bytes, not by row count.
+
+        Search text is heavily skewed — map rows carry megabytes of defaults
+        clustered in a few rowid ranges — so count-balanced shards leave one
+        worker holding most of the bytes and the pool just waits on it.
+        Boundaries are cached: the index is static between refreshes.
+        """
+        if self._scan_bounds is not None:
+            return self._scan_bounds
+        with sqlite3.connect(self.index_path) as conn:
+            sizes = conn.execute(
+                "SELECT rowid, LENGTH(search) FROM assets ORDER BY rowid"
+            ).fetchall()
+        shards: list[tuple[int, int]] = []
+        if sizes:
+            total = sum(size or 0 for _, size in sizes)
+            target = total / SCAN_WORKERS
+            acc = 0
+            start = sizes[0][0]
+            next_cut = target
+            for rowid, size in sizes:
+                acc += size or 0
+                if acc >= next_cut and len(shards) < SCAN_WORKERS - 1:
+                    shards.append((start, rowid))
+                    start = rowid + 1
+                    next_cut += target
+            shards.append((start, sizes[-1][0]))
+        self._scan_bounds = shards
+        return shards
+
+    def _scan_keys(self, needle: str) -> list[str]:
+        """Scan the search text for matching asset keys.
+
+        The scan is sharded across worker processes (threads and processes
+        alike only help when shards carry similar byte counts — see
+        _scan_shards), balanced by search-text bytes. Shards are disjoint,
+        so the merged keys only need one sort. Results are cached per
+        needle: the index is static between refreshes and agents retry
+        query variations.
+        """
+        cached = self._scan_cache.get(needle)
+        if cached is not None:
+            self._scan_cache.move_to_end(needle)
+            return cached
+        with sqlite3.connect(self.index_path) as db:
+            total = db.execute("SELECT COUNT(*) FROM assets").fetchone()[0]
+        if not total:
+            keys: list[str] = []
+        elif total < 5000 or SCAN_WORKERS <= 1:
+            # Small catalogs (fixtures): sharding overhead is not worth it.
+            with sqlite3.connect(self.index_path) as conn:
+                conn.execute("PRAGMA mmap_size=536870912")
+                keys = [
+                    row[0]
+                    for row in conn.execute(
+                        "SELECT asset FROM assets WHERE search LIKE ? ORDER BY asset", (needle,)
+                    ).fetchall()
+                ]
+        else:
+            shards = self._scan_shards()
+            tasks = [(str(self.index_path), shard_lo, shard_hi, needle) for shard_lo, shard_hi in shards]
+            if self._scan_pool is None:
+                self._scan_pool = ProcessPoolExecutor(max_workers=SCAN_WORKERS)
+            keys = []
+            for part in self._scan_pool.map(_scan_shard_worker, tasks):
+                keys.extend(part)
+            keys.sort()
+        if len(keys) <= 10000:  # broad scans produce huge lists; skip caching
+            self._scan_cache[needle] = keys
+            while len(self._scan_cache) > 64:
+                self._scan_cache.popitem(last=False)
+        return keys
 
     def get_lineage(self, asset: str, max_children: int, max_siblings: int) -> dict[str, Any]:
         """Class hierarchy for one asset: ancestry, direct children, siblings."""
@@ -640,8 +787,21 @@ TOOLS = [
 class McpServer:
     def __init__(self, catalog: Catalog) -> None:
         self.catalog = catalog
+        # (tool name, elapsed ms) for the last 25 calls; surfaced through
+        # get_catalog_stats so call timings survive without log capture.
+        self._recent_calls: deque[tuple[str, float]] = deque(maxlen=25)
 
     def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Timed wrapper: records per-call durations for get_catalog_stats."""
+        started = time.perf_counter()
+        try:
+            return self._dispatch(name, arguments)
+        finally:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            self._recent_calls.append((name, elapsed_ms))
+            LOGGER.info("tool %s -> %.1f ms", name, elapsed_ms)
+
+    def _dispatch(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "find_assets":
             max_nodes = int(arguments.get("maxNodes", 500))
             return _json_result(
@@ -911,7 +1071,17 @@ class McpServer:
             return _json_result(self.catalog.find_references(str(arguments.get("query", "")), bounded_limit(arguments.get("limit"))))
 
         if name == "get_catalog_stats":
-            return _json_result({"catalog": str(self.catalog.root), "index": str(self.catalog.index_path), **self.catalog.index_stats()})
+            return _json_result(
+                {
+                    "catalog": str(self.catalog.root),
+                    "index": str(self.catalog.index_path),
+                    **self.catalog.index_stats(),
+                    "recentCalls": [
+                        {"tool": tool_name, "ms": round(elapsed_ms, 1)}
+                        for tool_name, elapsed_ms in self._recent_calls
+                    ],
+                }
+            )
 
         if name == "refresh_catalog":
             self.catalog.refresh()
@@ -958,7 +1128,7 @@ class McpServer:
 
 
 def run() -> None:
-    logging.basicConfig(stream=sys.stderr, level=os.environ.get("KISMET_MCP_LOG_LEVEL", "WARNING"))
+    logging.basicConfig(stream=sys.stderr, level=os.environ.get("KISMET_MCP_LOG_LEVEL", "INFO"))
     try:
         server = McpServer(Catalog(default_catalog_root()))
     except Exception as exc:

@@ -33,26 +33,29 @@ the 52k-asset TBL tree (7,497 semantic docs):
 | Data + index location | Index rebuild | `find_assets` | `get_asset_summary` |
 | --- | --- | --- | --- |
 | Windows drive over WSL 9p (`/mnt/p`) | ~8 s (threaded loads) | ~19 s/call | ~32 ms |
-| WSL-native filesystem (ext4) | ~7 s | ~0.2–0.6 s/call | ~0.4 ms |
+| WSL-native filesystem (ext4) | ~9 s | 70–116 ms cold, ~0.4 ms cached | ~0.4 ms |
 
 The 9p numbers come from per-path `stat` round trips and SQLite journal I/O on
 every query. **Keep the generated tree and its SQLite index on the native
 filesystem**: sync the tree with `scripts/sync-tree-wsl.sh` (Windows drive →
 `~/kismet-llm-data/`), then point `KISMET_LLM_DATA` at the copy.
 `KISMET_LLM_DATA` accepts any path, so the same server configuration works for
-either location. The `find_assets` range depends on the needle: text matching
-early in a row's blob (asset, class, function names) exits rows quickly; text
-that only appears deep in `defaultValues` JSON scans the full ~520 MB search
-text. The rebuild loads docs through a chunked thread pool — measured
-single-threaded vs threaded in `docs/performance.md` (9p: 25.9 s → 7.9 s).
+either location. The remaining cold-scan cost is the `LIKE '%needle%'`
+substring scan over the ~419 MB search text, sharded across 8 worker
+processes with rowid ranges balanced by search-text bytes and pages read
+through mmap; repeat queries are served from an LRU scan cache. The rebuild
+loads docs through a chunked thread pool — measured single-threaded vs
+threaded in `docs/performance.md` (9p: 25.9 s → 7.9 s).
 
 The SQLite index is a derived cache (`.mcp-index.sqlite3` inside the data root
 by default; override with `KISMET_MCP_INDEX`). It rebuilds automatically when
 the manifest mtime or the index schema version changes — schema version 2 added
 the precomputed lowercase `search` column that `find_assets` scans (one text
 scan per call instead of re-concatenating every row's JSON per query, and no
-separate `COUNT` rescan). The index roughly doubles in size to hold the
-lowercase search text.
+separate `COUNT` rescan). Schema version 4 stores the search text flattened
+(`name value` instead of raw JSON, ~20% fewer scanned bytes) and added the
+byte-balanced process-pool scan, the scan cache, and mmap page reads. The
+index roughly doubles in size to hold the lowercase search text.
 
 ## Initial tools
 
@@ -69,7 +72,10 @@ lowercase search text.
 - `get_function_summary` returns one function without CFG blocks by default;
   pass `includeBlocks: true` for bounded control-flow evidence.
 - `find_references` searches indexed function-call and property references.
-- `get_catalog_stats` reports indexed, semantic, function, and reference counts.
+- `get_catalog_stats` reports indexed, semantic, function, and reference
+  counts, plus `recentCalls` — the last 25 tool calls with durations, so call
+  timings are visible without log capture. Each call also logs
+  `tool <name> -> <ms>` to stderr at INFO (tune with `KISMET_MCP_LOG_LEVEL`).
 - `refresh_catalog` refreshes the SQLite index after the generated tree changes.
 - `get_call_graph` and `get_control_flow` return bounded execution evidence.
 - `trace_behavior` locates candidate legacy behavior and follows its local graph.
