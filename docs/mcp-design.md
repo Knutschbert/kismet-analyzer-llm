@@ -4,18 +4,43 @@ MCP should provide query-oriented access to the asset graph rather than return
 whole assets by default. The protocol is the retrieval interface; the compact
 semantic JSON described in [`schema.md`](schema.md) is the response format.
 
-## Suggested tools
+## Implemented tools
+
+All retrieval tools below are implemented in `mcp_server/server.py`:
 
 ```text
-find_assets(query, limit)
-get_asset_summary(asset)
-get_function_summary(asset, function)
-get_call_graph(asset, function?, depth?, direction?, limit?)
-get_control_flow(asset, function, block_ids?, max_blocks?)
-find_references(symbol, asset?, limit?)
-search_bytecode(query, asset?, function?, limit?)
-get_asset_detail(asset, section, limit?)
+find_assets(query, limit, offset)
+get_asset_summary(asset, maxProperties?, maxFunctions?)
+get_function_summary(asset, function, includeBlocks?, maxBlocks?)
+get_call_graph(asset, function, direction?, maxDepth?, maxNodes?)
+get_control_flow(asset, function, maxBlocks?)
+find_references(query, limit)
+get_catalog_stats()
+refresh_catalog()
+trace_behavior(query, asset?, function?, maxDepth?, maxNodes?)
+compare_assets(left, right)
+get_implementation_spec(asset, function, targetActor?, maxBlocks?)
 ```
+
+Every tool returns a bounded `structuredContent` payload with a text twin and
+explicit `truncated`/`nextOffset` flags. `get_implementation_spec` is the
+evidence-backed workflow for recreating a legacy function in a new actor;
+`trace_behavior` is its discovery counterpart for locating legacy behavior.
+
+## Catalog and index
+
+The server loads `manifest.json` from the catalog root (`KISMET_LLM_DATA`) and
+maintains a SQLite index beside it (`.mcp-index.sqlite3`, override with
+`KISMET_MCP_INDEX`). The index is rebuilt automatically when the manifest
+mtime changes and stores:
+
+- `assets`: one row per manifest entry, including skipped-empty accounting.
+- `functions`: per-function calls, reads, writes, branches, diagnostics.
+- `references_index`: function-call and property read/write edges.
+
+This keeps repeated questions from re-reading semantic documents, and
+`find_assets`/`find_references` query the index instead of scanning files.
+Empty assets are indexed for discovery but have no output document.
 
 ### `get_asset_summary`
 
@@ -37,10 +62,12 @@ Avoid returning an unbounded transitive closure. Use `depth` and `limit`.
 Return only the requested function's selected blocks. Include successor
 conditions and compact pseudo-code, not the full serialized expression object.
 
-### `get_asset_detail`
+### `get_asset_detail` (planned)
 
 Use for filtered properties, imports, exports, strings, raw parse failures, or
-the generated `.txt` CFG. This is an escape hatch, not the normal path.
+the generated `.txt` CFG. This is an escape hatch, not the normal path. It is
+not implemented yet; until then, `get_asset_summary` returns the Tier 0
+property list and raw forensic JSON remains a separate concern.
 
 ## Context minimization
 
@@ -103,3 +130,19 @@ separate concern from the LLM semantic document set.
 An MCP indexer can consume these projections, but a direct integration with the
 parsed `UAsset` object is preferable because it can create explicit call,
 property, and asset-reference edges without reparsing rendered output.
+
+## Testing
+
+The MCP server has three test layers, all runnable from the workspace root:
+
+```bash
+python3 -m unittest discover -s mcp_server -p 'test_*.py'
+```
+
+- `mcp_server/test_server.py`: in-process unit tests with a synthesized catalog.
+- `mcp_server/test_integration.py`: end-to-end tests that launch the real
+  server process, speak JSON-RPC over stdio, and verify the initialize/tools/
+  call lifecycle, error responses, and ping.
+- `mcp_server/fixtures/tree/`: a static, git-tracked fixture catalog (one
+  complete, one partial, one empty asset) so integration tests and new tools
+  have deterministic data without requiring the full generated tree.

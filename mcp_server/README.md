@@ -31,6 +31,32 @@ Override it with `KISMET_LLM_DATA` when serving another game or generated tree.
 - `get_asset_summary` returns concise asset metadata and function summaries.
 - `get_function_summary` returns one function without CFG blocks by default;
   pass `includeBlocks: true` for bounded control-flow evidence.
+- `find_references` searches indexed function-call and property references.
+- `get_catalog_stats` reports indexed, semantic, function, and reference counts.
+- `refresh_catalog` refreshes the SQLite index after the generated tree changes.
+- `get_call_graph` and `get_control_flow` return bounded execution evidence.
+- `trace_behavior` locates candidate legacy behavior and follows its local graph.
+- `compare_assets` compares functions and properties between related assets.
+- `get_implementation_spec` turns one legacy function into an evidence-backed
+  recipe for recreating it in a new actor.
 
 All results are read-only and bounded. Empty assets remain discoverable through
 the manifest but have no semantic output document.
+
+## Test
+
+From the workspace root:
+
+```bash
+python3 -m unittest discover -s mcp_server -p 'test_*.py'
+```
+
+- `test_server.py` runs in-process unit tests against a synthesized catalog.
+- `test_integration.py` launches the real stdio server and verifies the
+  JSON-RPC lifecycle, tool results, and error handling against the static
+  fixture catalog in `fixtures/tree/`.
+
+The fixture catalog (one complete, one partial, one empty asset) is git-tracked
+so tests stay deterministic without the full generated tree. Tests write their
+SQLite index to a temporary directory via `KISMET_MCP_INDEX`, keeping the
+fixture tree clean.

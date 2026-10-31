@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "source": "kismet-bytecode",
+  "asset": "Content/Fixtures/TrapDoor.uasset",
+  "class": "TrapDoor_C",
+  "parent": "Actor",
+  "engineVersion": "VER_UE4_25",
+  "parseStatus": "complete",
+  "functions": [
+    {
+      "name": "BeginPlay",
+      "calls": ["Open"],
+      "reads": ["Health"],
+      "writes": [],
+      "variables": [],
+      "branches": 1,
+      "blocks": [
+        {
+          "id": 0,
+          "code": ["0: EX_Return\r\n1:     EX_Call Open"],
+          "successors": [1]
+        },
+        {
+          "id": 1,
+          "code": ["0: EX_Return\r\n1:     EX_Nothing"],
+          "successors": []
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "Open",
+      "calls": [],
+      "reads": ["DoorState"],
+      "writes": ["DoorState"],
+      "variables": [],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": ["0: DoorState = Opened\r\n1: EX_Return"],
+          "successors": []
+        }
+      ],
+      "diagnostics": []
+    }
+  ],
+  "properties": [
+    {
+      "name": "Health",
+      "type": "FloatProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible"
+    },
+    {
+      "name": "DoorState",
+      "type": "ByteProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible"
+    }
+  ],
+  "callEdges": [{ "from": "BeginPlay", "to": "Open" }],
+  "diagnostics": []
+}

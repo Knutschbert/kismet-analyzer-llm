@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "sourceRoot": "Content/Fixtures",
+  "assets": [
+    {
+      "asset": "Content/Fixtures/TrapDoor.uasset",
+      "output": "Content/Fixtures/TrapDoor.llm.json",
+      "class": "TrapDoor_C",
+      "functions": ["BeginPlay", "Open"],
+      "parseStatus": "complete",
+      "reason": null
+    },
+    {
+      "asset": "Content/Fixtures/TrapDoorPartial.uasset",
+      "output": "Content/Fixtures/TrapDoorPartial.llm.json",
+      "class": "TrapDoorPartial_C",
+      "functions": ["ExecuteUbergraph_TrapDoorPartial"],
+      "parseStatus": "partial",
+      "reason": null
+    },
+    {
+      "asset": "Content/Fixtures/PlaceholderTexture.uasset",
+      "output": null,
+      "class": null,
+      "functions": [],
+      "parseStatus": "empty",
+      "reason": "no_semantic_content"
+    }
+  ]
+}

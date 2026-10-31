@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "source": "kismet-bytecode",
+  "asset": "Content/Fixtures/TrapDoorPartial.uasset",
+  "class": "TrapDoorPartial_C",
+  "parent": "Actor",
+  "engineVersion": "VER_UE4_25",
+  "parseStatus": "partial",
+  "functions": [
+    {
+      "name": "ExecuteUbergraph_TrapDoorPartial",
+      "calls": [],
+      "reads": [],
+      "writes": [],
+      "variables": [],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": ["0: EX_Return\r\n1:     EX_Nothing"],
+          "successors": []
+        }
+      ],
+      "diagnostics": ["Unimplemented non-EX_IntConst expression"]
+    }
+  ],
+  "properties": [],
+  "callEdges": [],
+  "diagnostics": ["Unimplemented non-EX_IntConst expression"]
+}
