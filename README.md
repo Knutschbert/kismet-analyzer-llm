@@ -104,8 +104,17 @@ scripts\produce-llm.bat "P:\path\to\BaseSpawner.uasset"
 scripts\produce-llm.bat "P:\path\to\unpacked-assets" "P:\path\to\llm-output"
 ```
 
-The wrapper uses `bin\kismet-analyzer.exe` and defaults to `VER_UE4_25`. You
-can override these for a session:
+The wrapper uses `bin\kismet-analyzer.exe` and defaults to `VER_UE4_25`.
+Without an explicit output argument, generated files are placed under the
+git-ignored `output\generated\` directory inside this workspace rather than
+beside the extracted assets. Empty semantic assets are omitted; they remain in
+`manifest.json` with `parseStatus: "empty"` and no output path.
+
+For a directory dropped without an explicit output path, the source directory
+name is retained under `output\generated\tree\` (for example,
+`output\generated\tree\TBL\`) so runs for different games do not collide.
+
+You can override the analyzer and engine version for a session:
 
 ```bat
 set KISMET_UE_VERSION=VER_UE4_27

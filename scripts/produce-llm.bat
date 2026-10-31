@@ -24,7 +24,7 @@ if not exist "%INPUT%" (
 )
 
 if "%~2"=="" (
-    set "OUTPUT=%~dp1%~n1-llm-output"
+    set "OUTPUT=%~dp0..\output\generated\single\%~n1"
 ) else (
     set "OUTPUT=%~2"
 )
@@ -41,9 +41,12 @@ echo Done.
 exit /b 0
 
 :tree
-for %%D in ("%INPUT%") do set "SOURCE=%%~fD"
+for %%D in ("%INPUT%") do (
+    set "SOURCE=%%~fD"
+    set "SOURCE_NAME=%%~nxD"
+)
 if "%~2"=="" (
-    set "OUTPUT=%SOURCE%-llm-output"
+    set "OUTPUT=%~dp0..\output\generated\tree\%SOURCE_NAME%"
 ) else (
     set "OUTPUT=%~2"
 )

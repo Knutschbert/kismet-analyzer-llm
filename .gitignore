@@ -4,6 +4,7 @@
 # Generated output from the drag-and-drop scripts.
 **/*-outputs/
 **/*-kismet-output/
+/output/generated/
 
 # Local scratch/test output.
 /test-output/
