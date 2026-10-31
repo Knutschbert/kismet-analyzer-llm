@@ -16,5 +16,7 @@
 *.log
 *.tmp
 *.bak
+__pycache__/
+*.pyc
 Thumbs.db
 Desktop.ini
