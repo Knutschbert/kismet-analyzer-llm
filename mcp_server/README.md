@@ -32,18 +32,19 @@ the 52k-asset TBL tree (7,497 semantic docs):
 
 | Data + index location | Index rebuild | `find_assets` | `get_asset_summary` |
 | --- | --- | --- | --- |
-| Windows drive over WSL 9p (`/mnt/p`) | ~150 s | ~19 s/call | ~32 ms |
+| Windows drive over WSL 9p (`/mnt/p`) | ~8 s (threaded loads) | ~19 s/call | ~32 ms |
 | WSL-native filesystem (ext4) | ~7 s | ~0.2–0.6 s/call | ~0.4 ms |
 
-The 9p numbers come from per-path `lstat`/`stat` round trips (the index rebuild
-walks every doc) and from SQLite journal I/O on every query. **Keep the
-generated tree and its SQLite index on the native filesystem**: sync the tree
-with `scripts/sync-tree-wsl.sh` (Windows drive → `~/kismet-llm-data/`), then
-point `KISMET_LLM_DATA` at the copy. `KISMET_LLM_DATA` accepts any path, so the
-same server configuration works for either location. The `find_assets` range
-depends on the needle: text matching early in a row's blob (asset, class,
-function names) exits rows quickly; text that only appears deep in
-`defaultValues` JSON scans the full ~520 MB search text.
+The 9p numbers come from per-path `stat` round trips and SQLite journal I/O on
+every query. **Keep the generated tree and its SQLite index on the native
+filesystem**: sync the tree with `scripts/sync-tree-wsl.sh` (Windows drive →
+`~/kismet-llm-data/`), then point `KISMET_LLM_DATA` at the copy.
+`KISMET_LLM_DATA` accepts any path, so the same server configuration works for
+either location. The `find_assets` range depends on the needle: text matching
+early in a row's blob (asset, class, function names) exits rows quickly; text
+that only appears deep in `defaultValues` JSON scans the full ~520 MB search
+text. The rebuild loads docs through a chunked thread pool — measured
+single-threaded vs threaded in `docs/performance.md` (9p: 25.9 s → 7.9 s).
 
 The SQLite index is a derived cache (`.mcp-index.sqlite3` inside the data root
 by default; override with `KISMET_MCP_INDEX`). It rebuilds automatically when
@@ -56,7 +57,13 @@ lowercase search text.
 ## Initial tools
 
 - `find_assets` searches asset paths, classes, function names, property names,
-  and default (CDO) value contents.
+  and default (CDO) value contents. Pass `includeDescendants: true` to expand
+  every matched class's descendant subtree into the results (fuzzy class +
+  subtree search, bounded by `maxNodes`).
+- `get_lineage` returns one asset's class hierarchy: parent class, the full
+  ancestry chain (terminating honestly at native classes or catalog
+  boundaries), direct child classes, and class siblings. Accepts an asset path
+  or a class name with or without the `_C` suffix.
 - `get_asset_summary` returns concise asset metadata, function summaries, and
   (when present) the `defaultValues` array.
 - `get_function_summary` returns one function without CFG blocks by default;
@@ -71,7 +78,10 @@ lowercase search text.
   recipe for recreating it in a new actor.
 
 All results are read-only and bounded. Empty assets remain discoverable through
-the manifest but have no semantic output document.
+the manifest but have no semantic output document. Hierarchy completeness is
+bounded by the generated tree: children of a native class like `Actor` means
+the indexed blueprints directly inheriting it, and two same-named blueprints in
+different folders are indistinguishable by class name (the tool returns both).
 
 ## Default values (CDO)
 

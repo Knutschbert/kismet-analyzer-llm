@@ -65,6 +65,42 @@ substring semantics that the catalog relies on (e.g. `"carryable_2hloot_c"`
 tokenizes into three tokens and would no longer match). The index file roughly
 doubles (~79 → ~150 MB) to hold the lowercase search text.
 
+## Hierarchy (index schema v3)
+
+Schema v3 adds the `parent` column (+ index) for class-hierarchy queries.
+Measured on the real tree:
+
+- v3 rebuild: 7.9 s on ext4 (the parent column + index cost ~1.2 s over v2's
+  6.6 s).
+- `get_lineage`: 39–42 ms per call — full ancestry chain (e.g.
+  `Carryable_Fish_2Hand_C → BaseCarryable_2hLoot_C → BaseCarryable_C →
+  BaseInventoryItem_C → InventoryItem [not in catalog]`), children, and
+  siblings.
+- `find_assets` with `includeDescendants`: 242–333 ms per call, bounded by
+  `maxNodes` (a fuzzy `"Carryable"` match expands 896 plain hits into 1,021
+  nodes).
+
+## Rebuild parallelization
+
+The rebuild loop loads docs through a chunked `ThreadPoolExecutor`. The
+reasoning, from the profiles:
+
+- File reads release the GIL, so overlapping requests hides per-request
+  latency — the dominant cost on 9p.
+- `json.loads`/`json.dumps` are C code that holds the GIL, so on ext4 the
+  parse phase cannot be threaded.
+
+Measured cold rebuild:
+
+| Filesystem | Single-threaded | Threaded ×8 |
+| --- | --- | --- |
+| 9p (`/mnt/p`) | 25.9 s | **7.9 s** (3.3×) |
+| ext4 | 6.7–7.9 s | 6.6–7.3 s (neutral) |
+
+Threading makes a 9p rebuild as fast as an ext4 one; on ext4 it is neutral
+within noise. The chunked loader also bounds peak memory (~256 parsed docs at
+a time instead of all 7,497).
+
 ## Reproducing
 
 ```bash

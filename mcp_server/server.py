@@ -13,6 +13,8 @@ import logging
 import os
 import sqlite3
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from itertools import islice
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +24,8 @@ DEFAULT_LIMIT = 20
 MAX_LIMIT = 100
 # Bump when the index schema changes; a mismatched index is wiped and rebuilt.
 # 2: adds the precomputed lowercase `search` column for find_assets.
-SCHEMA_VERSION = "2"
+# 3: adds the `parent` column + index for class-hierarchy queries.
+SCHEMA_VERSION = "3"
 
 
 def _json_result(value: Any) -> dict[str, Any]:
@@ -34,6 +37,28 @@ def _error_result(message: str) -> dict[str, Any]:
         "isError": True,
         "content": [{"type": "text", "text": message}],
     }
+
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS assets (
+    asset TEXT PRIMARY KEY, class TEXT, parent TEXT, output TEXT, parse_status TEXT,
+    reason TEXT, functions TEXT NOT NULL, properties TEXT NOT NULL,
+    default_values TEXT NOT NULL DEFAULT '[]',
+    search TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS functions (
+    asset TEXT NOT NULL, name TEXT NOT NULL, calls TEXT NOT NULL,
+    reads TEXT NOT NULL, writes TEXT NOT NULL, branches INTEGER NOT NULL,
+    diagnostics TEXT NOT NULL, PRIMARY KEY(asset, name)
+);
+CREATE TABLE IF NOT EXISTS references_index (
+    asset TEXT NOT NULL, function TEXT NOT NULL, target TEXT NOT NULL,
+    kind TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS references_target ON references_index(target);
+CREATE INDEX IF NOT EXISTS assets_parent ON assets(parent);
+"""
 
 
 class Catalog:
@@ -70,39 +95,28 @@ class Catalog:
             # The index is a derived cache that is cheap to rebuild; durable
             # writes only add latency on slow mounts.
             db.execute("PRAGMA synchronous=OFF")
+            # Bootstrap only the meta table, then check the schema version
+            # before creating anything else: an older index may lack new
+            # columns, and CREATE TABLE IF NOT EXISTS does not add them.
             db.executescript(
-                """
-                CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS assets (
-                    asset TEXT PRIMARY KEY, class TEXT, output TEXT, parse_status TEXT,
-                    reason TEXT, functions TEXT NOT NULL, properties TEXT NOT NULL,
-                    default_values TEXT NOT NULL DEFAULT '[]',
-                    search TEXT NOT NULL DEFAULT ''
-                );
-                CREATE TABLE IF NOT EXISTS functions (
-                    asset TEXT NOT NULL, name TEXT NOT NULL, calls TEXT NOT NULL,
-                    reads TEXT NOT NULL, writes TEXT NOT NULL, branches INTEGER NOT NULL,
-                    diagnostics TEXT NOT NULL, PRIMARY KEY(asset, name)
-                );
-                CREATE TABLE IF NOT EXISTS references_index (
-                    asset TEXT NOT NULL, function TEXT NOT NULL, target TEXT NOT NULL,
-                    kind TEXT NOT NULL
-                );
-                CREATE INDEX IF NOT EXISTS references_target ON references_index(target);
-                """
+                "CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);"
             )
-            # Rebuild whenever the index schema is outdated: wiping and
-            # re-deriving is cheaper and safer than in-place backfills.
             version = db.execute("SELECT value FROM meta WHERE key = 'schema_version'").fetchone()
             if not version or version[0] != SCHEMA_VERSION:
-                db.execute("DELETE FROM assets")
-                db.execute("DELETE FROM functions")
-                db.execute("DELETE FROM references_index")
+                # Drop and re-derive: cheaper and safer than in-place backfills.
+                db.executescript(
+                    "DROP TABLE IF EXISTS references_index;"
+                    "DROP TABLE IF EXISTS functions;"
+                    "DROP TABLE IF EXISTS assets;"
+                    "DROP TABLE IF EXISTS meta;"
+                )
+                db.executescript(SCHEMA)
                 db.execute(
-                    "INSERT INTO meta(key, value) VALUES('schema_version', ?) "
-                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    "INSERT INTO meta(key, value) VALUES('schema_version', ?)",
                     (SCHEMA_VERSION,),
                 )
+            else:
+                db.executescript(SCHEMA)
 
             previous = db.execute("SELECT value FROM meta WHERE key = 'manifest_mtime'").fetchone()
             if previous and previous[0] == str(manifest_mtime):
@@ -111,34 +125,39 @@ class Catalog:
             db.execute("DELETE FROM assets")
             db.execute("DELETE FROM functions")
             db.execute("DELETE FROM references_index")
-            for entry in self.entries:
+
+            def _safe_load(entry: dict[str, Any]) -> dict[str, Any]:
+                try:
+                    return self._load_output(entry["output"])
+                except (OSError, ValueError, json.JSONDecodeError) as exc:
+                    LOGGER.warning("Unable to index %s: %s", entry.get("asset", ""), exc)
+                    return {}
+
+            def _index_entry(entry: dict[str, Any], document: dict[str, Any]) -> None:
                 asset = entry.get("asset", "")
                 output = entry.get("output")
-                document: dict[str, Any] = {}
-                if output:
-                    try:
-                        document = self._load_output(output)
-                    except (OSError, ValueError, json.JSONDecodeError) as exc:
-                        LOGGER.warning("Unable to index %s: %s", asset, exc)
-
                 properties = document.get("properties", [])
                 functions = document.get("functions", [])
                 default_values = document.get("defaultValues", [])
-                entry["_properties"] = properties
-                entry["_default_values"] = default_values
                 functions_blob = json.dumps(entry.get("functions", [f.get("name") for f in functions]))
                 properties_blob = json.dumps(properties)
                 defaults_blob = json.dumps(default_values)
                 class_name = entry.get("class") or document.get("class") or ""
+                parent_name = document.get("parent")
                 # Precomputed lowercase search text: find_assets scans this
                 # column directly instead of re-concatenating and lowercasing
-                # every row's full JSON text per query.
-                search_blob = f"{asset} {class_name} {functions_blob} {properties_blob} {defaults_blob}".lower()
+                # every row's full JSON text per query. Parent is included so
+                # searching a parent class name finds its subclasses.
+                search_blob = (
+                    f"{asset} {class_name} {parent_name or ''} "
+                    f"{functions_blob} {properties_blob} {defaults_blob}"
+                ).lower()
                 db.execute(
-                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         asset,
                         class_name,
+                        parent_name,
                         output,
                         entry.get("parseStatus", document.get("parseStatus", "unknown")),
                         entry.get("reason"),
@@ -178,6 +197,25 @@ class Catalog:
                             "INSERT INTO references_index VALUES (?, ?, ?, ?)",
                             (asset, name, target, "property_write"),
                         )
+
+            # Doc reads release the GIL, so a small thread pool overlaps the
+            # per-request latency that dominates slow mounts (9p). JSON
+            # parsing stays GIL-bound, so on fast local disks the win is small.
+            # Chunked so only one chunk of parsed docs sits in memory at a time.
+            with_output = [entry for entry in self.entries if entry.get("output")]
+            pending = iter(with_output)
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                while True:
+                    chunk = list(islice(pending, 256))
+                    if not chunk:
+                        break
+                    for entry, document in zip(chunk, pool.map(_safe_load, chunk)):
+                        _index_entry(entry, document)
+            # Empty assets stay indexed even without a document.
+            for entry in self.entries:
+                if not entry.get("output"):
+                    _index_entry(entry, {})
+
             db.execute(
                 "INSERT INTO meta(key, value) VALUES('manifest_mtime', ?) "
                 "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -208,18 +246,47 @@ class Catalog:
     def _normalize(asset: str) -> str:
         return asset.replace("\\", "/").lstrip("/").casefold()
 
-    def find_assets(self, query: str, limit: int, offset: int = 0) -> dict[str, Any]:
+    def find_assets(
+        self,
+        query: str,
+        limit: int,
+        offset: int = 0,
+        include_descendants: bool = False,
+        max_nodes: int = 500,
+    ) -> dict[str, Any]:
         needle = f"%{query.casefold().strip()}%"
         with sqlite3.connect(self.index_path) as db:
             # One text scan per call: collect the matching keys, then
             # detail-fetch only the requested page by primary key. A separate
             # COUNT(*) would rescan the full search text a second time.
-            keys = [
-                row[0]
-                for row in db.execute(
-                    "SELECT asset FROM assets WHERE search LIKE ? ORDER BY asset", (needle,)
+            descendants_truncated = False
+            if include_descendants:
+                # Expand every matched class's subtree in the same pass: the
+                # recursive step resolves children through the parent index.
+                # Fetch one extra row to detect truncation.
+                expanded = db.execute(
+                    """
+                    WITH RECURSIVE matched(asset, class) AS (
+                        SELECT asset, class FROM assets WHERE search LIKE ? AND class IS NOT NULL
+                    ),
+                    tree(asset, class) AS (
+                        SELECT asset, class FROM matched
+                        UNION
+                        SELECT a.asset, a.class FROM assets a JOIN tree t ON a.parent = t.class
+                    )
+                    SELECT asset FROM tree ORDER BY asset LIMIT ?
+                    """,
+                    (needle, max_nodes + 1),
                 ).fetchall()
-            ]
+                descendants_truncated = len(expanded) > max_nodes
+                keys = [row[0] for row in expanded[:max_nodes]]
+            else:
+                keys = [
+                    row[0]
+                    for row in db.execute(
+                        "SELECT asset FROM assets WHERE search LIKE ? ORDER BY asset", (needle,)
+                    ).fetchall()
+                ]
             count = len(keys)
             rows: list[tuple[Any, ...]] = []
             page_keys = keys[offset : offset + limit]
@@ -242,11 +309,103 @@ class Catalog:
             for asset, class_name, output, parse_status, functions, default_values in rows
         ]
         next_offset = offset + limit if offset + limit < count else None
-        return {
+        result = {
             "query": query,
             "results": page,
             "count": count,
             "nextOffset": next_offset,
+        }
+        if include_descendants:
+            result["descendantsTruncated"] = descendants_truncated
+        return result
+
+    def get_lineage(self, asset: str, max_children: int, max_siblings: int) -> dict[str, Any]:
+        """Class hierarchy for one asset: ancestry, direct children, siblings."""
+        with sqlite3.connect(self.index_path) as db:
+            row = db.execute(
+                "SELECT asset, class, parent FROM assets WHERE lower(asset) = ?",
+                (self._normalize(asset),),
+            ).fetchone()
+            if row is None:
+                # Allow lookup by class name, with or without the `_C` suffix.
+                needle = asset.strip().casefold()
+                candidates = [needle] if needle.endswith("_c") else [needle, needle + "_c"]
+                for candidate in candidates:
+                    row = db.execute(
+                        "SELECT asset, class, parent FROM assets WHERE lower(class) = ?",
+                        (candidate,),
+                    ).fetchone()
+                    if row is not None:
+                        break
+            if row is None:
+                raise KeyError(f"Asset is not indexed: {asset}")
+            path, class_name, parent = row
+            if not class_name:
+                raise KeyError(f"Asset has no class: {path}")
+
+            def related(where_parent: str, exclude: str | None, limit: int) -> tuple[list, int, bool]:
+                if exclude:
+                    total = db.execute(
+                        "SELECT COUNT(*) FROM assets WHERE parent = ? AND lower(class) != ?",
+                        (where_parent, exclude.casefold()),
+                    ).fetchone()[0]
+                    rows = db.execute(
+                        "SELECT asset, class FROM assets WHERE parent = ? AND lower(class) != ? "
+                        "ORDER BY asset LIMIT ?",
+                        (where_parent, exclude.casefold(), limit),
+                    ).fetchall()
+                else:
+                    total = db.execute(
+                        "SELECT COUNT(*) FROM assets WHERE parent = ?", (where_parent,)
+                    ).fetchone()[0]
+                    rows = db.execute(
+                        "SELECT asset, class FROM assets WHERE parent = ? ORDER BY asset LIMIT ?",
+                        (where_parent, limit),
+                    ).fetchall()
+                items = [{"asset": item, "class": name} for item, name in rows]
+                return items, total, total > len(items)
+
+            children, child_total, children_truncated = related(class_name, None, max_children)
+            if parent:
+                siblings, sibling_total, siblings_truncated = related(parent, class_name, max_siblings)
+            else:
+                siblings, sibling_total, siblings_truncated = [], 0, False
+
+            # Ancestry: walk upward while the parent resolves to an indexed
+            # asset. Native classes (e.g. Actor) terminate the chain honestly.
+            ancestry = [{"class": class_name, "asset": path, "inCatalog": True}]
+            ancestry_truncated = False
+            seen = {class_name.casefold()}
+            cursor = parent
+            while cursor:
+                key = cursor.casefold()
+                if key in seen:  # cycle guard
+                    break
+                seen.add(key)
+                nxt = db.execute(
+                    "SELECT asset, class, parent FROM assets WHERE lower(class) = ?", (key,)
+                ).fetchone()
+                if nxt is None:
+                    ancestry.append({"class": cursor, "asset": None, "inCatalog": False})
+                    break
+                ancestry.append({"class": nxt[1], "asset": nxt[0], "inCatalog": True})
+                cursor = nxt[2]
+                if len(ancestry) >= 32:
+                    ancestry_truncated = True
+                    break
+
+        return {
+            "asset": path,
+            "class": class_name,
+            "parent": parent,
+            "ancestry": ancestry,
+            "ancestryTruncated": ancestry_truncated,
+            "children": children,
+            "childCount": child_total,
+            "childrenTruncated": children_truncated,
+            "siblings": siblings,
+            "siblingCount": sibling_total,
+            "siblingsTruncated": siblings_truncated,
         }
 
     def get_entry(self, asset: str) -> dict[str, Any] | None:
@@ -323,15 +482,40 @@ def bounded_limit(value: Any) -> int:
 TOOLS = [
     {
         "name": "find_assets",
-        "description": "Find indexed assets by path, class, or function name.",
+        "description": "Find indexed assets by path, class, or function name; optionally expand each matched class's descendant subtree.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "Text to search for."},
                 "limit": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": DEFAULT_LIMIT},
                 "offset": {"type": "integer", "minimum": 0, "default": 0},
+                "includeDescendants": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Also return all descendant classes of every matched class (fuzzy class + subtree search).",
+                },
+                "maxNodes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5000,
+                    "default": 500,
+                    "description": "Bound on the expanded result set when includeDescendants is set.",
+                },
             },
             "required": ["query"],
+        },
+    },
+    {
+        "name": "get_lineage",
+        "description": "Get one asset's class hierarchy: parent class, ancestry chain, direct child classes, and class siblings.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset": {"type": "string", "description": "Indexed asset path or class name (with or without the _C suffix)."},
+                "maxChildren": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
+                "maxSiblings": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
+            },
+            "required": ["asset"],
         },
     },
     {
@@ -459,11 +643,23 @@ class McpServer:
 
     def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "find_assets":
+            max_nodes = int(arguments.get("maxNodes", 500))
             return _json_result(
                 self.catalog.find_assets(
                     str(arguments.get("query", "")),
                     bounded_limit(arguments.get("limit")),
                     max(0, int(arguments.get("offset", 0))),
+                    include_descendants=bool(arguments.get("includeDescendants", False)),
+                    max_nodes=max(1, min(max_nodes, 5000)),
+                )
+            )
+
+        if name == "get_lineage":
+            return _json_result(
+                self.catalog.get_lineage(
+                    str(arguments.get("asset", "")),
+                    bounded_limit(arguments.get("maxChildren", 50)),
+                    bounded_limit(arguments.get("maxSiblings", 50)),
                 )
             )
 

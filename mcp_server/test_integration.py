@@ -88,7 +88,8 @@ class StdioIntegrationTests(unittest.TestCase):
         tool_names = {tool["name"] for tool in responses[2]["result"]["tools"]}
         self.assertIn("get_implementation_spec", tool_names)
         self.assertIn("find_references", tool_names)
-        self.assertEqual(len(tool_names), 11)
+        self.assertIn("get_lineage", tool_names)
+        self.assertEqual(len(tool_names), 12)
 
         found = responses[3]["result"]["structuredContent"]
         assets = [result["asset"] for result in found["results"]]
