@@ -1,0 +1,2693 @@
+{
+  "schemaVersion": 1,
+  "source": "kismet-bytecode",
+  "parseStatus": "partial",
+  "asset": "P:\\Modding\\unchained\\wwise\\unpacked\\TBL\\Content\\GameModes\\Spawners\\BaseSpawner.uasset",
+  "class": "BaseSpawner_C",
+  "parent": "Spawner",
+  "engineVersion": "VER_UE4_25",
+  "properties": [
+    {
+      "name": "UberGraphFrame",
+      "type": "StructProperty",
+      "flags": "CPF_Transient, CPF_DuplicateTransient"
+    },
+    {
+      "name": "Billboard",
+      "type": "ObjectProperty",
+      "flags": "CPF_BlueprintVisible, CPF_InstancedReference, CPF_NonTransactional"
+    },
+    {
+      "name": "SpawnerName (Ingame)",
+      "type": "NameProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible, CPF_DisableEditOnInstance"
+    },
+    {
+      "name": "Fade time",
+      "type": "FloatProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible, CPF_DisableEditOnInstance"
+    },
+    {
+      "name": "Time before starting fade",
+      "type": "FloatProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible, CPF_DisableEditOnInstance"
+    },
+    {
+      "name": "PlayerKilled_StageAction",
+      "type": "StructProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible"
+    },
+    {
+      "name": "SpawnerColor",
+      "type": "ByteProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible"
+    },
+    {
+      "name": "OnSpawnedPlayerKilled",
+      "type": "MulticastInlineDelegateProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible, CPF_Net, CPF_DisableEditOnInstance, CPF_BlueprintAssignable, CPF_BlueprintCallable"
+    },
+    {
+      "name": "bUsePlayerKilledStageAction",
+      "type": "BoolProperty",
+      "flags": "CPF_Edit, CPF_BlueprintVisible, CPF_DisableEditOnInstance"
+    }
+  ],
+  "functions": [
+    {
+      "name": "OnSpawnedPlayerKilled__DelegateSignature",
+      "calls": [],
+      "variables": [],
+      "reads": [],
+      "writes": [],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_Return\r\n1:     EX_Nothing"
+          ],
+          "successors": []
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "ExecuteUbergraph_BaseSpawner",
+      "calls": [
+        "AddScore",
+        "HasMatchStarted",
+        "import /Script/Engine->Actor->AddComponent",
+        "import /Script/Engine->Actor->HasAuthority",
+        "import /Script/Engine->Actor->K2_GetRootComponent",
+        "import /Script/Engine->ActorComponent->ComponentHasTag",
+        "import /Script/Engine->ActorComponent->K2_DestroyComponent",
+        "import /Script/Engine->GameplayStatics->GetGameState",
+        "import /Script/Engine->KismetArrayLibrary->Array_Get",
+        "import /Script/Engine->KismetArrayLibrary->Array_Length",
+        "import /Script/Engine->KismetMathLibrary->Add_IntInt",
+        "import /Script/Engine->KismetMathLibrary->BreakTransform",
+        "import /Script/Engine->KismetMathLibrary->BreakVector",
+        "import /Script/Engine->KismetMathLibrary->FClamp",
+        "import /Script/Engine->KismetMathLibrary->FTrunc",
+        "import /Script/Engine->KismetMathLibrary->GetForwardVector",
+        "import /Script/Engine->KismetMathLibrary->Greater_FloatFloat",
+        "import /Script/Engine->KismetMathLibrary->Less_IntInt",
+        "import /Script/Engine->KismetMathLibrary->MakeRotator",
+        "import /Script/Engine->KismetMathLibrary->MakeVector",
+        "import /Script/Engine->KismetMathLibrary->NotEqual_ByteByte",
+        "import /Script/Engine->KismetMathLibrary->Subtract_FloatFloat",
+        "import /Script/Engine->KismetSystemLibrary->Conv_SoftObjectReferenceToObject",
+        "import /Script/Engine->KismetSystemLibrary->Delay",
+        "import /Script/Engine->KismetSystemLibrary->IsValid",
+        "import /Script/Engine->SceneComponent->GetChildrenComponents",
+        "import /Script/TBL->Spawner->OnSpawnedCharacter",
+        "import /Script/TBL->TBLSystemLibrary->GetStatsComponent",
+        "KillConstructablesInRadius",
+        "KillHorsesInRadius",
+        "OnKilled_Event_0",
+        "OnSpawnedPlayerKilled__DelegateSignature",
+        "SetViewTargetWithBlend",
+        "StartCameraFade"
+      ],
+      "variables": [
+        "[bUsePlayerKilledStageAction]",
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_AddComponent_ReturnValue]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakTransform_Location]",
+        "[CallFunc_BreakTransform_Rotation]",
+        "[CallFunc_BreakTransform_Scale]",
+        "[CallFunc_BreakVector_X]",
+        "[CallFunc_BreakVector_Y]",
+        "[CallFunc_BreakVector_Z]",
+        "[CallFunc_ComponentHasTag_ReturnValue]",
+        "[CallFunc_Conv_SoftObjectReferenceToObject_ReturnValue]",
+        "[CallFunc_FClamp_ReturnValue]",
+        "[CallFunc_FTrunc_ReturnValue]",
+        "[CallFunc_GetChildrenComponents_Children]",
+        "[CallFunc_GetForwardVector_ReturnValue]",
+        "[CallFunc_GetGameState_ReturnValue]",
+        "[CallFunc_GetStatsComponent_ReturnValue]",
+        "[CallFunc_Greater_FloatFloat_ReturnValue]",
+        "[CallFunc_HasAuthority_ReturnValue]",
+        "[CallFunc_HasMatchStarted_ReturnValue]",
+        "[CallFunc_IsValid_ReturnValue_1]",
+        "[CallFunc_IsValid_ReturnValue]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_MakeRotator_ReturnValue]",
+        "[CallFunc_MakeVector_ReturnValue]",
+        "[CallFunc_Subtract_FloatFloat_ReturnValue]",
+        "[CameraInterpTime]",
+        "[DamageTaken]",
+        "[DamageTaker]",
+        "[EntryPoint]",
+        "[Fade time]",
+        "[K2Node_CreateDelegate_OutputDelegate]",
+        "[K2Node_CustomEvent_Event]",
+        "[K2Node_CustomEvent_Value_1]",
+        "[K2Node_CustomEvent_Value]",
+        "[K2Node_CustomEvent_Wave]",
+        "[K2Node_DynamicCast_AsActor]",
+        "[K2Node_DynamicCast_AsScored_Stage_Interface]",
+        "[K2Node_DynamicCast_AsVIP_Base_Pawn]",
+        "[K2Node_DynamicCast_bSuccess_1]",
+        "[K2Node_DynamicCast_bSuccess_2]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_Event_Character]",
+        "[K2Node_Event_Controller_1]",
+        "[K2Node_Event_NewCharacter]",
+        "[K2Node_Event_Pawn]",
+        "[K2Node_Event_SpawnComp]",
+        "[K2Node_Event_SpawningTransform]",
+        "[K2Node_SwitchEnum_CmpSuccess]",
+        "[OnKilled]",
+        "[OnSpawnedPlayerKilled]",
+        "[PlayerCameraManager]",
+        "[PlayerKilled_StageAction]",
+        "[StageActor]",
+        "[StageActorAction]",
+        "[StartCameraOffset]",
+        "[StartCameraRotation]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_struct_Variable]",
+        "[Time before starting fade]",
+        "[Value]",
+        "EditorOnly",
+        "ExecuteUbergraph_BaseSpawner",
+        "import /Script/Engine->Default__KismetArrayLibrary",
+        "NODE_AddHUDComponent-2"
+      ],
+      "reads": [
+        "[bUsePlayerKilledStageAction]",
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakTransform_Location]",
+        "[CallFunc_BreakTransform_Rotation]",
+        "[CallFunc_BreakTransform_Scale]",
+        "[CallFunc_BreakVector_X]",
+        "[CallFunc_BreakVector_Y]",
+        "[CallFunc_BreakVector_Z]",
+        "[CallFunc_ComponentHasTag_ReturnValue]",
+        "[CallFunc_Conv_SoftObjectReferenceToObject_ReturnValue]",
+        "[CallFunc_FClamp_ReturnValue]",
+        "[CallFunc_FTrunc_ReturnValue]",
+        "[CallFunc_GetChildrenComponents_Children]",
+        "[CallFunc_GetForwardVector_ReturnValue]",
+        "[CallFunc_GetGameState_ReturnValue]",
+        "[CallFunc_GetStatsComponent_ReturnValue]",
+        "[CallFunc_Greater_FloatFloat_ReturnValue]",
+        "[CallFunc_HasAuthority_ReturnValue]",
+        "[CallFunc_HasMatchStarted_ReturnValue]",
+        "[CallFunc_IsValid_ReturnValue_1]",
+        "[CallFunc_IsValid_ReturnValue]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_MakeRotator_ReturnValue]",
+        "[CallFunc_MakeVector_ReturnValue]",
+        "[CallFunc_Subtract_FloatFloat_ReturnValue]",
+        "[CameraInterpTime]",
+        "[DamageTaken]",
+        "[DamageTaker]",
+        "[EntryPoint]",
+        "[Fade time]",
+        "[K2Node_CreateDelegate_OutputDelegate]",
+        "[K2Node_CustomEvent_Event]",
+        "[K2Node_CustomEvent_Value_1]",
+        "[K2Node_CustomEvent_Value]",
+        "[K2Node_CustomEvent_Wave]",
+        "[K2Node_DynamicCast_AsActor]",
+        "[K2Node_DynamicCast_AsScored_Stage_Interface]",
+        "[K2Node_DynamicCast_AsVIP_Base_Pawn]",
+        "[K2Node_DynamicCast_bSuccess_2]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_Event_Character]",
+        "[K2Node_Event_Controller_1]",
+        "[K2Node_Event_NewCharacter]",
+        "[K2Node_Event_Pawn]",
+        "[K2Node_Event_SpawnComp]",
+        "[K2Node_Event_SpawningTransform]",
+        "[K2Node_SwitchEnum_CmpSuccess]",
+        "[OnKilled]",
+        "[OnSpawnedPlayerKilled]",
+        "[PlayerCameraManager]",
+        "[PlayerKilled_StageAction]",
+        "[StageActor]",
+        "[StageActorAction]",
+        "[StartCameraOffset]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_struct_Variable]",
+        "[Time before starting fade]",
+        "[Value]",
+        "EditorOnly",
+        "ExecuteUbergraph_BaseSpawner",
+        "import /Script/Engine->Default__KismetArrayLibrary",
+        "NODE_AddHUDComponent-2"
+      ],
+      "writes": [
+        "[bUsePlayerKilledStageAction]",
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_AddComponent_ReturnValue]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_ComponentHasTag_ReturnValue]",
+        "[CallFunc_Conv_SoftObjectReferenceToObject_ReturnValue]",
+        "[CallFunc_FClamp_ReturnValue]",
+        "[CallFunc_FTrunc_ReturnValue]",
+        "[CallFunc_GetChildrenComponents_Children]",
+        "[CallFunc_GetForwardVector_ReturnValue]",
+        "[CallFunc_GetGameState_ReturnValue]",
+        "[CallFunc_GetStatsComponent_ReturnValue]",
+        "[CallFunc_Greater_FloatFloat_ReturnValue]",
+        "[CallFunc_HasAuthority_ReturnValue]",
+        "[CallFunc_HasMatchStarted_ReturnValue]",
+        "[CallFunc_IsValid_ReturnValue_1]",
+        "[CallFunc_IsValid_ReturnValue]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_MakeRotator_ReturnValue]",
+        "[CallFunc_MakeVector_ReturnValue]",
+        "[CallFunc_Subtract_FloatFloat_ReturnValue]",
+        "[K2Node_DynamicCast_AsActor]",
+        "[K2Node_DynamicCast_AsScored_Stage_Interface]",
+        "[K2Node_DynamicCast_AsVIP_Base_Pawn]",
+        "[K2Node_DynamicCast_bSuccess_1]",
+        "[K2Node_DynamicCast_bSuccess_2]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_SwitchEnum_CmpSuccess]",
+        "[StartCameraOffset]",
+        "[StartCameraRotation]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]"
+      ],
+      "branches": 11,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_PushExecutionFlow 2892"
+          ],
+          "successors": [
+            {
+              "target": 2892,
+              "kind": "Push"
+            },
+            {
+              "target": 5,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 2892,
+          "code": [
+            "2892: EX_Return\r\n2893:     EX_Nothing"
+          ],
+          "successors": []
+        },
+        {
+          "id": 246,
+          "code": [
+            "246: EX_Context\r\n247:     EX_Context\r\n248:         EX_LocalVariable [K2Node_Event_Controller_1]\r\n269:         EX_InstanceVariable [PlayerCameraManager]\r\n290:     EX_VirtualFunction StartCameraFade\r\n303:         EX_FloatConst 1\r\n308:         EX_FloatConst 0\r\n313:         EX_InstanceVariable [Fade time]\r\n322:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n335:             EX_FloatConst 0\r\n340:             EX_FloatConst 0\r\n345:             EX_FloatConst 0\r\n350:             EX_FloatConst 0\r\n356:         EX_False\r\n357:         EX_False",
+            "359: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 608,
+          "code": [
+            "608: EX_LetObj\r\n609:     EX_LocalVariable [CallFunc_GetStatsComponent_ReturnValue]\r\n618:     EX_CallMath import /Script/TBL->TBLSystemLibrary->GetStatsComponent\r\n627:         EX_LocalVariable [K2Node_Event_Character]",
+            "637: EX_BindDelegate OnKilled_Event_0\r\n650:     EX_LocalVariable [K2Node_CreateDelegate_OutputDelegate]\r\n659:     EX_Self",
+            "660: EX_AddMulticastDelegate\r\n661:     EX_Context\r\n662:         EX_LocalVariable [CallFunc_GetStatsComponent_ReturnValue]\r\n683:         EX_InstanceVariable [OnKilled]\r\n692:     EX_LocalVariable [K2Node_CreateDelegate_OutputDelegate]",
+            "701: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 928,
+          "code": [
+            "928: EX_Let\r\n937:     EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n946:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]",
+            "955: EX_PushExecutionFlow 1323"
+          ],
+          "successors": [
+            {
+              "target": 1323,
+              "kind": "Push"
+            },
+            {
+              "target": 960,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 1323,
+          "code": [
+            "1323: EX_Let\r\n1332:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]\r\n1341:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_IntInt\r\n1350:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n1359:         EX_IntConst 1",
+            "1365: EX_Let\r\n1374:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n1383:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]",
+            "1392: EX_Jump 748",
+            "748: EX_LetObj\r\n749:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n758:     EX_FinalFunction import /Script/Engine->Actor->K2_GetRootComponent",
+            "768: EX_SetArray\r\n769:     EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "779: EX_Context\r\n780:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n801:     EX_FinalFunction import /Script/Engine->SceneComponent->GetChildrenComponents\r\n810:         EX_True\r\n811:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "821: EX_Let\r\n830:     EX_LocalVariable [CallFunc_Array_Length_ReturnValue]\r\n839:     EX_Context\r\n840:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n861:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Length\r\n870:             EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "880: EX_LetBool\r\n881:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]\r\n890:     EX_CallMath import /Script/Engine->KismetMathLibrary->Less_IntInt\r\n899:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n908:         EX_LocalVariable [CallFunc_Array_Length_ReturnValue]",
+            "918: EX_PopExecutionFlowIfNot\r\n919:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 928,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 1157,
+          "code": [
+            "1157: EX_LetObj\r\n1158:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n1167:     EX_FinalFunction import /Script/Engine->Actor->K2_GetRootComponent",
+            "1177: EX_SetArray\r\n1178:     EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "1188: EX_Context\r\n1189:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n1210:     EX_FinalFunction import /Script/Engine->SceneComponent->GetChildrenComponents\r\n1219:         EX_True\r\n1220:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "1230: EX_Context\r\n1231:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n1252:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n1261:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]\r\n1270:         EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n1279:         EX_LocalVariable [CallFunc_Array_Get_Item]",
+            "1289: EX_Context\r\n1290:     EX_LocalVariable [CallFunc_Array_Get_Item]\r\n1311:     EX_FinalFunction import /Script/Engine->ActorComponent->K2_DestroyComponent\r\n1320:         EX_Self",
+            "1322: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 1457,
+          "code": [
+            "1457: EX_LetObj\r\n1458:     EX_LocalVariable [CallFunc_GetGameState_ReturnValue]\r\n1467:     EX_CallMath import /Script/Engine->GameplayStatics->GetGameState\r\n1476:         EX_Self",
+            "1478: EX_LetBool\r\n1479:     EX_LocalVariable [CallFunc_HasMatchStarted_ReturnValue]\r\n1488:     EX_Context\r\n1489:         EX_LocalVariable [CallFunc_GetGameState_ReturnValue]\r\n1510:         EX_VirtualFunction HasMatchStarted",
+            "1524: EX_PopExecutionFlowIfNot\r\n1525:     EX_LocalVariable [CallFunc_HasMatchStarted_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 1534,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 1534,
+          "code": [
+            "1534: EX_Context\r\n1535:     EX_Context\r\n1536:         EX_LocalVariable [K2Node_Event_Controller_1]\r\n1557:         EX_InstanceVariable [PlayerCameraManager]\r\n1578:     EX_VirtualFunction StartCameraFade\r\n1591:         EX_FloatConst 1\r\n1596:         EX_FloatConst 0\r\n1601:         EX_FloatConst 0,4\r\n1606:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n1619:             EX_FloatConst 0\r\n1624:             EX_FloatConst 0\r\n1629:             EX_FloatConst 0\r\n1634:             EX_FloatConst 0\r\n1640:         EX_False\r\n1641:         EX_False",
+            "1643: EX_Context\r\n1644:     EX_LocalVariable [K2Node_Event_Controller_1]\r\n1665:     EX_VirtualFunction SetViewTargetWithBlend\r\n1678:         EX_Self\r\n1679:         EX_FloatConst 0\r\n1684:         EX_ByteConst 4\r\n1686:         EX_FloatConst 3\r\n1691:         EX_False",
+            "1693: EX_Let\r\n1702:     EX_LocalVariable [K2Node_DynamicCast_AsVIP_Base_Pawn]\r\n1711:     EX_DynamicCast import /Game/Characters/Classes/VIP/VIP_BasePawn->VIP_BasePawn_C\r\n1720:         EX_LocalVariable [K2Node_Event_Pawn]",
+            "1729: EX_Let\r\n1738:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]\r\n1747:     EX_PrimitiveCast ObjectToBool\r\n1749:         EX_LocalVariable [K2Node_DynamicCast_AsVIP_Base_Pawn]",
+            "1758: EX_JumpIfNot 1937\r\n1763:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]"
+          ],
+          "successors": [
+            {
+              "target": 1937,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 1772,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 1937,
+          "code": [
+            "1937: EX_Context\r\n1938:     EX_LocalVariable [K2Node_Event_Controller_1]\r\n1959:     EX_VirtualFunction SetViewTargetWithBlend\r\n1972:         EX_LocalVariable [K2Node_Event_Pawn]\r\n1981:         EX_InstanceVariable [CameraInterpTime]\r\n1990:         EX_ByteConst 4\r\n1992:         EX_FloatConst 2\r\n1997:         EX_False",
+            "1999: EX_Jump 1830",
+            "1830: EX_LetBool\r\n1831:     EX_LocalVariable [CallFunc_Greater_FloatFloat_ReturnValue]\r\n1840:     EX_CallMath import /Script/Engine->KismetMathLibrary->Greater_FloatFloat\r\n1849:         EX_InstanceVariable [Time before starting fade]\r\n1858:         EX_FloatConst 0",
+            "1864: EX_JumpIfNot 360\r\n1869:     EX_LocalVariable [CallFunc_Greater_FloatFloat_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 360,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 1878,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 1772,
+          "code": [
+            "1772: EX_Context\r\n1773:     EX_LocalVariable [K2Node_Event_Controller_1]\r\n1794:     EX_VirtualFunction SetViewTargetWithBlend\r\n1807:         EX_LocalVariable [K2Node_Event_Pawn]\r\n1816:         EX_FloatConst 0\r\n1821:         EX_ByteConst 4\r\n1823:         EX_FloatConst 2\r\n1828:         EX_False"
+          ],
+          "successors": [
+            {
+              "target": 1830,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 360,
+          "code": [
+            "360: EX_Let\r\n369:     EX_LocalVariable [CallFunc_Subtract_FloatFloat_ReturnValue]\r\n378:     EX_CallMath import /Script/Engine->KismetMathLibrary->Subtract_FloatFloat\r\n387:         EX_FloatConst 0\r\n392:         EX_InstanceVariable [CameraInterpTime]",
+            "402: EX_Context\r\n403:     EX_Context\r\n404:         EX_LocalVariable [K2Node_Event_Controller_1]\r\n425:         EX_InstanceVariable [PlayerCameraManager]\r\n446:     EX_VirtualFunction StartCameraFade\r\n459:         EX_LocalVariable [CallFunc_Subtract_FloatFloat_ReturnValue]\r\n468:         EX_FloatConst 1\r\n473:         EX_InstanceVariable [Fade time]\r\n482:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n495:             EX_FloatConst 0\r\n500:             EX_FloatConst 0\r\n505:             EX_FloatConst 0\r\n510:             EX_FloatConst 0\r\n516:         EX_False\r\n517:         EX_True",
+            "519: EX_CallMath import /Script/Engine->KismetSystemLibrary->Delay\r\n528:     EX_Self\r\n529:     EX_InstanceVariable [Fade time]\r\n538:     EX_StructConst import /Script/Engine->LatentActionInfo\r\n551:         EX_SkipOffsetConst 246\r\n556:         EX_IntConst 1983552036\r\n561:         EX_NameConst ExecuteUbergraph_BaseSpawner\r\n574:         EX_Self"
+          ],
+          "successors": [
+            {
+              "target": 246,
+              "kind": "Latent",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            },
+            {
+              "target": 577,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 1878,
+          "code": [
+            "1878: EX_CallMath import /Script/Engine->KismetSystemLibrary->Delay\r\n1887:     EX_Self\r\n1888:     EX_InstanceVariable [Time before starting fade]\r\n1897:     EX_StructConst import /Script/Engine->LatentActionInfo\r\n1910:         EX_SkipOffsetConst 360\r\n1915:         EX_IntConst 1207427183\r\n1920:         EX_NameConst ExecuteUbergraph_BaseSpawner\r\n1933:         EX_Self"
+          ],
+          "successors": [
+            {
+              "target": 360,
+              "kind": "Latent",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            },
+            {
+              "target": 1936,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 2383,
+          "code": [
+            "2383: EX_LetObj\r\n2384:     EX_LocalVariable [CallFunc_Conv_SoftObjectReferenceToObject_ReturnValue]\r\n2393:     EX_CallMath import /Script/Engine->KismetSystemLibrary->Conv_SoftObjectReferenceToObject\r\n2402:         EX_StructMemberContext [StageActor]\r\n2411:             EX_InstanceVariable [PlayerKilled_StageAction]",
+            "2421: EX_Let\r\n2430:     EX_LocalVariable [K2Node_DynamicCast_AsActor]\r\n2439:     EX_DynamicCast import /Script/Engine->Actor\r\n2448:         EX_LocalVariable [CallFunc_Conv_SoftObjectReferenceToObject_ReturnValue]",
+            "2457: EX_Let\r\n2466:     EX_LocalVariable [K2Node_DynamicCast_bSuccess_1]\r\n2475:     EX_PrimitiveCast ObjectToBool\r\n2477:         EX_LocalVariable [K2Node_DynamicCast_AsActor]",
+            "2486: EX_LetBool\r\n2487:     EX_LocalVariable [CallFunc_IsValid_ReturnValue]\r\n2496:     EX_CallMath import /Script/Engine->KismetSystemLibrary->IsValid\r\n2505:         EX_LocalVariable [K2Node_DynamicCast_AsActor]",
+            "2515: EX_PopExecutionFlowIfNot\r\n2516:     EX_LocalVariable [CallFunc_IsValid_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 2525,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 2525,
+          "code": [
+            "2525: EX_LetBool\r\n2526:     EX_LocalVariable [K2Node_SwitchEnum_CmpSuccess]\r\n2535:     EX_CallMath import /Script/Engine->KismetMathLibrary->NotEqual_ByteByte\r\n2544:         EX_StructMemberContext [StageActorAction]\r\n2553:             EX_InstanceVariable [PlayerKilled_StageAction]\r\n2562:         EX_ByteConst 0",
+            "2565: EX_JumpIfNot 2580\r\n2570:     EX_LocalVariable [K2Node_SwitchEnum_CmpSuccess]"
+          ],
+          "successors": [
+            {
+              "target": 2580,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 2579,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 2580,
+          "code": [
+            "2580: EX_LetObj\r\n2581:     EX_LocalVariable [CallFunc_Conv_SoftObjectReferenceToObject_ReturnValue]\r\n2590:     EX_CallMath import /Script/Engine->KismetSystemLibrary->Conv_SoftObjectReferenceToObject\r\n2599:         EX_StructMemberContext [StageActor]\r\n2608:             EX_InstanceVariable [PlayerKilled_StageAction]",
+            "2618: EX_Let\r\n2627:     EX_LocalVariable [K2Node_DynamicCast_AsActor]\r\n2636:     EX_DynamicCast import /Script/Engine->Actor\r\n2645:         EX_LocalVariable [CallFunc_Conv_SoftObjectReferenceToObject_ReturnValue]",
+            "2654: EX_Let\r\n2663:     EX_LocalVariable [K2Node_DynamicCast_bSuccess_1]\r\n2672:     EX_PrimitiveCast ObjectToBool\r\n2674:         EX_LocalVariable [K2Node_DynamicCast_AsActor]",
+            "2683: EX_Let\r\n2692:     EX_LocalVariable [K2Node_DynamicCast_AsScored_Stage_Interface]\r\n2701:     EX_ObjToInterfaceCast import /Game/GameModes/Modes/Interfaces/ScoredStage_Interface->ScoredStage_Interface_C\r\n2710:         EX_LocalVariable [K2Node_DynamicCast_AsActor]",
+            "2719: EX_Let\r\n2728:     EX_LocalVariable [K2Node_DynamicCast_bSuccess_2]\r\n2737:     EX_PrimitiveCast InterfaceToBool\r\n2739:         EX_LocalVariable [K2Node_DynamicCast_AsScored_Stage_Interface]",
+            "2748: EX_PopExecutionFlowIfNot\r\n2749:     EX_LocalVariable [K2Node_DynamicCast_bSuccess_2]"
+          ],
+          "successors": [
+            {
+              "target": 2758,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 2579,
+          "code": [
+            "2579: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 2758,
+          "code": [
+            "2758: EX_Let\r\n2767:     EX_LocalVariable [CallFunc_FTrunc_ReturnValue]\r\n2776:     EX_CallMath import /Script/Engine->KismetMathLibrary->FTrunc\r\n2785:         EX_StructMemberContext [Value]\r\n2794:             EX_InstanceVariable [PlayerKilled_StageAction]",
+            "2804: EX_Context\r\n2805:     EX_InterfaceContext\r\n2806:         EX_LocalVariable [K2Node_DynamicCast_AsScored_Stage_Interface]\r\n2827:     EX_LocalVirtualFunction AddScore\r\n2840:         EX_LocalVariable [CallFunc_FTrunc_ReturnValue]",
+            "2850: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 5,
+          "code": [
+            "5: EX_ComputedJump\r\n6:     EX_LocalVariable [EntryPoint]"
+          ],
+          "successors": []
+        },
+        {
+          "id": 960,
+          "code": [
+            "960: EX_LetObj\r\n961:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n970:     EX_FinalFunction import /Script/Engine->Actor->K2_GetRootComponent",
+            "980: EX_SetArray\r\n981:     EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "991: EX_Context\r\n992:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n1013:     EX_FinalFunction import /Script/Engine->SceneComponent->GetChildrenComponents\r\n1022:         EX_True\r\n1023:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "1033: EX_Context\r\n1034:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n1055:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n1064:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]\r\n1073:         EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n1082:         EX_LocalVariable [CallFunc_Array_Get_Item]",
+            "1092: EX_LetBool\r\n1093:     EX_LocalVariable [CallFunc_ComponentHasTag_ReturnValue]\r\n1102:     EX_Context\r\n1103:         EX_LocalVariable [CallFunc_Array_Get_Item]\r\n1124:         EX_FinalFunction import /Script/Engine->ActorComponent->ComponentHasTag\r\n1133:             EX_NameConst EditorOnly",
+            "1147: EX_PopExecutionFlowIfNot\r\n1148:     EX_LocalVariable [CallFunc_ComponentHasTag_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 1157,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 577,
+          "code": [
+            "577: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 1936,
+          "code": [
+            "1936: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "kind": "unsupported_expression",
+          "message": "Unimplemented non-EX_IntConst",
+          "function": "ExecuteUbergraph_BaseSpawner"
+        }
+      ]
+    },
+    {
+      "name": "OnSpawningCharacter",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[K2Node_Event_SpawningTransform]",
+        "[SpawningTransform]"
+      ],
+      "reads": [
+        "[SpawningTransform]"
+      ],
+      "writes": [
+        "[K2Node_Event_SpawningTransform]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_Event_SpawningTransform]\r\n9:     EX_LocalOutVariable [SpawningTransform]",
+            "18: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n27:     EX_IntConst 15",
+            "33: EX_Return\r\n34:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 15,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "OnSpawnedCharacter",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[K2Node_Event_NewCharacter]",
+        "[K2Node_Event_SpawnComp]",
+        "[NewCharacter]",
+        "[SpawnComp]"
+      ],
+      "reads": [
+        "[NewCharacter]",
+        "[SpawnComp]"
+      ],
+      "writes": [
+        "[K2Node_Event_NewCharacter]",
+        "[K2Node_Event_SpawnComp]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_Event_NewCharacter]\r\n9:     EX_LocalVariable [NewCharacter]",
+            "18: EX_LetValueOnPersistentFrame [K2Node_Event_SpawnComp]\r\n27:     EX_LocalVariable [SpawnComp]",
+            "36: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n45:     EX_IntConst 2863",
+            "51: EX_Return\r\n52:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 2863,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "StopPlayerKilledStageAction",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [],
+      "reads": [],
+      "writes": [],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n9:     EX_IntConst 2851",
+            "15: EX_Return\r\n16:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 2851,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "OnKilled_Event_0",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[Event]",
+        "[K2Node_CustomEvent_Event]"
+      ],
+      "reads": [
+        "[Event]"
+      ],
+      "writes": [
+        "[K2Node_CustomEvent_Event]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_CustomEvent_Event]\r\n9:     EX_LocalOutVariable [Event]",
+            "18: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n27:     EX_IntConst 2327",
+            "33: EX_Return\r\n34:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 2327,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "OnPossessedCharacter",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[Character]",
+        "[Controller]",
+        "[K2Node_Event_Character]",
+        "[K2Node_Event_Controller]"
+      ],
+      "reads": [
+        "[Character]",
+        "[Controller]"
+      ],
+      "writes": [
+        "[K2Node_Event_Character]",
+        "[K2Node_Event_Controller]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_Event_Character]\r\n9:     EX_LocalVariable [Character]",
+            "18: EX_LetValueOnPersistentFrame [K2Node_Event_Controller]\r\n27:     EX_LocalVariable [Controller]",
+            "36: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n45:     EX_IntConst 2322",
+            "51: EX_Return\r\n52:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 2322,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "Interp rot",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[K2Node_CustomEvent_Value]",
+        "[Value]"
+      ],
+      "reads": [
+        "[Value]"
+      ],
+      "writes": [
+        "[K2Node_CustomEvent_Value]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_CustomEvent_Value]\r\n9:     EX_LocalVariable [Value]",
+            "18: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n27:     EX_IntConst 2200",
+            "33: EX_Return\r\n34:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 2200,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "Interp Z",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[K2Node_CustomEvent_Value_1]",
+        "[Value]"
+      ],
+      "reads": [
+        "[Value]"
+      ],
+      "writes": [
+        "[K2Node_CustomEvent_Value_1]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_CustomEvent_Value_1]\r\n9:     EX_LocalVariable [Value]",
+            "18: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n27:     EX_IntConst 2071",
+            "33: EX_Return\r\n34:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 2071,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "Add HUD Marker to Wave",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[K2Node_CustomEvent_Wave]",
+        "[Wave]"
+      ],
+      "reads": [
+        "[Wave]"
+      ],
+      "writes": [
+        "[K2Node_CustomEvent_Wave]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_CustomEvent_Wave]\r\n9:     EX_LocalVariable [Wave]",
+            "18: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n27:     EX_IntConst 2004",
+            "33: EX_Return\r\n34:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 2004,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "Cinematics_ControllerPossessedPawn",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [
+        "[Controller]",
+        "[K2Node_Event_Controller_1]",
+        "[K2Node_Event_Pawn]",
+        "[Pawn]"
+      ],
+      "reads": [
+        "[Controller]",
+        "[Pawn]"
+      ],
+      "writes": [
+        "[K2Node_Event_Controller_1]",
+        "[K2Node_Event_Pawn]"
+      ],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LetValueOnPersistentFrame [K2Node_Event_Controller_1]\r\n9:     EX_LocalVariable [Controller]",
+            "18: EX_LetValueOnPersistentFrame [K2Node_Event_Pawn]\r\n27:     EX_LocalVariable [Pawn]",
+            "36: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n45:     EX_IntConst 1397",
+            "51: EX_Return\r\n52:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 1397,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "ReceiveBeginPlay",
+      "calls": [
+        "ExecuteUbergraph_BaseSpawner"
+      ],
+      "variables": [],
+      "reads": [],
+      "writes": [],
+      "branches": 0,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_LocalFinalFunction ExecuteUbergraph_BaseSpawner\r\n9:     EX_IntConst 702",
+            "15: EX_Return\r\n16:     EX_Nothing"
+          ],
+          "successors": [
+            {
+              "target": 702,
+              "kind": "Function",
+              "function": "ExecuteUbergraph_BaseSpawner"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "UserConstructionScript",
+      "calls": [
+        "CreateDynamicMaterialInstance",
+        "GetMaxPlayerCount",
+        "GetSpawnLocationAndComponent",
+        "import /Script/Engine->Actor->AddComponent",
+        "import /Script/Engine->Actor->K2_GetRootComponent",
+        "import /Script/Engine->GameplayStatics->GetAllActorsOfClass",
+        "import /Script/Engine->KismetArrayLibrary->Array_AddUnique",
+        "import /Script/Engine->KismetArrayLibrary->Array_Contains",
+        "import /Script/Engine->KismetArrayLibrary->Array_Get",
+        "import /Script/Engine->KismetArrayLibrary->Array_Length",
+        "import /Script/Engine->KismetMathLibrary->Add_IntInt",
+        "import /Script/Engine->KismetMathLibrary->BreakTransform",
+        "import /Script/Engine->KismetMathLibrary->Conv_IntToFloat",
+        "import /Script/Engine->KismetMathLibrary->Conv_LinearColorToVector",
+        "import /Script/Engine->KismetMathLibrary->ConvertTransformToRelative",
+        "import /Script/Engine->KismetMathLibrary->Divide_FloatFloat",
+        "import /Script/Engine->KismetMathLibrary->FClamp",
+        "import /Script/Engine->KismetMathLibrary->GreaterEqual_IntInt",
+        "import /Script/Engine->KismetMathLibrary->Less_IntInt",
+        "import /Script/Engine->KismetMathLibrary->LessEqual_IntInt",
+        "import /Script/Engine->KismetMathLibrary->LinearColorLerp",
+        "import /Script/Engine->KismetMathLibrary->MakeTransform",
+        "import /Script/Engine->KismetMathLibrary->MakeVector",
+        "import /Script/Engine->KismetMathLibrary->NotEqual_ByteByte",
+        "import /Script/Engine->KismetMathLibrary->NotEqual_IntInt",
+        "import /Script/Engine->KismetMathLibrary->Subtract_FloatFloat",
+        "import /Script/Engine->KismetMathLibrary->Subtract_IntInt",
+        "import /Script/Engine->KismetMathLibrary->Subtract_VectorVector",
+        "import /Script/Engine->KismetStringLibrary->Concat_StrStr",
+        "import /Script/Engine->KismetSystemLibrary->GetObjectName",
+        "import /Script/Engine->KismetTextLibrary->Conv_IntToText",
+        "import /Script/Engine->KismetTextLibrary->Conv_StringToText",
+        "import /Script/Engine->MaterialInstanceDynamic->SetVectorParameterValue",
+        "import /Script/Engine->MeshComponent->SetVectorParameterValueOnMaterials",
+        "import /Script/Engine->SceneComponent->GetChildrenComponents",
+        "import /Script/Engine->SceneComponent->K2_AttachToComponent",
+        "import /Script/Engine->SceneComponent->K2_GetComponentToWorld",
+        "import /Script/Engine->TextRenderComponent->K2_SetText",
+        "import /Script/TBL->Spawner->SetupComponentsArray",
+        "import /Script/TBL->TBLSystemLibrary->GetWorldType",
+        "SetMaterial"
+      ],
+      "variables": [
+        "[CallFunc_Add_IntInt_ReturnValue_1]",
+        "[CallFunc_Add_IntInt_ReturnValue_2]",
+        "[CallFunc_Add_IntInt_ReturnValue_3]",
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_AddComponent_ReturnValue_1]",
+        "[CallFunc_AddComponent_ReturnValue_2]",
+        "[CallFunc_AddComponent_ReturnValue]",
+        "[CallFunc_Array_AddUnique_ReturnValue_1]",
+        "[CallFunc_Array_AddUnique_ReturnValue]",
+        "[CallFunc_Array_Contains_ReturnValue]",
+        "[CallFunc_Array_Get_Item_1]",
+        "[CallFunc_Array_Get_Item_2]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue_1]",
+        "[CallFunc_Array_Length_ReturnValue_2]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakTransform_Location]",
+        "[CallFunc_BreakTransform_Rotation]",
+        "[CallFunc_BreakTransform_Scale]",
+        "[CallFunc_Concat_StrStr_ReturnValue_1]",
+        "[CallFunc_Concat_StrStr_ReturnValue_2]",
+        "[CallFunc_Concat_StrStr_ReturnValue]",
+        "[CallFunc_Conv_IntToFloat_ReturnValue_1]",
+        "[CallFunc_Conv_IntToFloat_ReturnValue]",
+        "[CallFunc_Conv_IntToText_ReturnValue]",
+        "[CallFunc_Conv_LinearColorToVector_ReturnValue]",
+        "[CallFunc_Conv_StringToText_ReturnValue]",
+        "[CallFunc_ConvertTransformToRelative_ReturnValue]",
+        "[CallFunc_CreateDynamicMaterialInstance_ReturnValue]",
+        "[CallFunc_Divide_FloatFloat_ReturnValue]",
+        "[CallFunc_FClamp_ReturnValue]",
+        "[CallFunc_GetAllActorsOfClass_OutActors]",
+        "[CallFunc_GetChildrenComponents_Children]",
+        "[CallFunc_GetMaxPlayerCount_ReturnValue]",
+        "[CallFunc_GetObjectName_ReturnValue_1]",
+        "[CallFunc_GetObjectName_ReturnValue]",
+        "[CallFunc_GetSpawnLocationAndComponent_OutTransform]",
+        "[CallFunc_GetSpawnLocationAndComponent_ReturnValue]",
+        "[CallFunc_GetSpawnLocationAndComponent_SpawnHalfHeight]",
+        "[CallFunc_GetSpawnLocationAndComponent_SpawnRadius]",
+        "[CallFunc_GetWorldType_ReturnValue_1]",
+        "[CallFunc_GetWorldType_ReturnValue]",
+        "[CallFunc_GreaterEqual_IntInt_ReturnValue]",
+        "[CallFunc_K2_AttachToComponent_ReturnValue_1]",
+        "[CallFunc_K2_AttachToComponent_ReturnValue]",
+        "[CallFunc_K2_GetComponentToWorld_ReturnValue]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue_1]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue_1]",
+        "[CallFunc_Less_IntInt_ReturnValue_2]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_LessEqual_IntInt_ReturnValue]",
+        "[CallFunc_LinearColorLerp_ReturnValue]",
+        "[CallFunc_MakeTransform_ReturnValue_1]",
+        "[CallFunc_MakeTransform_ReturnValue]",
+        "[CallFunc_MakeVector_ReturnValue]",
+        "[CallFunc_NotEqual_IntInt_ReturnValue]",
+        "[CallFunc_Subtract_FloatFloat_ReturnValue]",
+        "[CallFunc_Subtract_IntInt_ReturnValue]",
+        "[CallFunc_Subtract_VectorVector_ReturnValue]",
+        "[CameraInterpTime]",
+        "[ColorValue]",
+        "[DebugString]",
+        "[Faction]",
+        "[FactionsThatUseMe]",
+        "[Fade time]",
+        "[K2Node_DynamicCast_AsStatic_Mesh_Component]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_Select_Default]",
+        "[K2Node_SwitchEnum_CmpSuccess_1]",
+        "[K2Node_SwitchEnum_CmpSuccess]",
+        "[Max Players]",
+        "[SequencesThatUseMe]",
+        "[SpawnerColor]",
+        "[Spawners]",
+        "[Temp_byte_Variable]",
+        "[Temp_int_Array_Index_Variable_1]",
+        "[Temp_int_Array_Index_Variable_2]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable_1]",
+        "[Temp_int_Loop_Counter_Variable_2]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_int_Variable]",
+        "[Temp_struct_Variable_1]",
+        "[Temp_struct_Variable_2]",
+        "[Temp_struct_Variable_3]",
+        "[Temp_struct_Variable_4]",
+        "[Temp_struct_Variable_5]",
+        "[Temp_struct_Variable_6]",
+        "[Temp_struct_Variable_7]",
+        "[Temp_struct_Variable_8]",
+        "[Temp_struct_Variable]",
+        "[Time before starting fade]",
+        "Color",
+        "import /Game/GameModes/Spawners/SpawnerPreviewMaterial->SpawnerPreviewMaterial",
+        "import /Script/Engine->Default__KismetArrayLibrary",
+        "import /Script/TBL->SpawnSequence",
+        "NODE_AddStaticMeshComponent-0",
+        "NODE_AddTextRenderComponent-0",
+        "NODE_AddTextRenderComponent-1",
+        "None"
+      ],
+      "reads": [
+        "[CallFunc_Add_IntInt_ReturnValue_1]",
+        "[CallFunc_Add_IntInt_ReturnValue_2]",
+        "[CallFunc_Add_IntInt_ReturnValue_3]",
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_AddComponent_ReturnValue_1]",
+        "[CallFunc_AddComponent_ReturnValue_2]",
+        "[CallFunc_AddComponent_ReturnValue]",
+        "[CallFunc_Array_Contains_ReturnValue]",
+        "[CallFunc_Array_Get_Item_1]",
+        "[CallFunc_Array_Get_Item_2]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue_1]",
+        "[CallFunc_Array_Length_ReturnValue_2]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakTransform_Location]",
+        "[CallFunc_BreakTransform_Rotation]",
+        "[CallFunc_BreakTransform_Scale]",
+        "[CallFunc_Concat_StrStr_ReturnValue_1]",
+        "[CallFunc_Concat_StrStr_ReturnValue_2]",
+        "[CallFunc_Concat_StrStr_ReturnValue]",
+        "[CallFunc_Conv_IntToFloat_ReturnValue_1]",
+        "[CallFunc_Conv_IntToFloat_ReturnValue]",
+        "[CallFunc_Conv_IntToText_ReturnValue]",
+        "[CallFunc_Conv_LinearColorToVector_ReturnValue]",
+        "[CallFunc_Conv_StringToText_ReturnValue]",
+        "[CallFunc_ConvertTransformToRelative_ReturnValue]",
+        "[CallFunc_CreateDynamicMaterialInstance_ReturnValue]",
+        "[CallFunc_Divide_FloatFloat_ReturnValue]",
+        "[CallFunc_FClamp_ReturnValue]",
+        "[CallFunc_GetAllActorsOfClass_OutActors]",
+        "[CallFunc_GetChildrenComponents_Children]",
+        "[CallFunc_GetMaxPlayerCount_ReturnValue]",
+        "[CallFunc_GetObjectName_ReturnValue_1]",
+        "[CallFunc_GetObjectName_ReturnValue]",
+        "[CallFunc_GetSpawnLocationAndComponent_OutTransform]",
+        "[CallFunc_GetSpawnLocationAndComponent_ReturnValue]",
+        "[CallFunc_GetSpawnLocationAndComponent_SpawnHalfHeight]",
+        "[CallFunc_GetSpawnLocationAndComponent_SpawnRadius]",
+        "[CallFunc_GetWorldType_ReturnValue_1]",
+        "[CallFunc_GetWorldType_ReturnValue]",
+        "[CallFunc_GreaterEqual_IntInt_ReturnValue]",
+        "[CallFunc_K2_GetComponentToWorld_ReturnValue]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue_1]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue_1]",
+        "[CallFunc_Less_IntInt_ReturnValue_2]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_LessEqual_IntInt_ReturnValue]",
+        "[CallFunc_LinearColorLerp_ReturnValue]",
+        "[CallFunc_MakeTransform_ReturnValue_1]",
+        "[CallFunc_MakeTransform_ReturnValue]",
+        "[CallFunc_MakeVector_ReturnValue]",
+        "[CallFunc_NotEqual_IntInt_ReturnValue]",
+        "[CallFunc_Subtract_FloatFloat_ReturnValue]",
+        "[CallFunc_Subtract_IntInt_ReturnValue]",
+        "[CallFunc_Subtract_VectorVector_ReturnValue]",
+        "[CameraInterpTime]",
+        "[ColorValue]",
+        "[DebugString]",
+        "[Faction]",
+        "[FactionsThatUseMe]",
+        "[Fade time]",
+        "[K2Node_DynamicCast_AsStatic_Mesh_Component]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_Select_Default]",
+        "[K2Node_SwitchEnum_CmpSuccess_1]",
+        "[K2Node_SwitchEnum_CmpSuccess]",
+        "[SequencesThatUseMe]",
+        "[SpawnerColor]",
+        "[Spawners]",
+        "[Temp_byte_Variable]",
+        "[Temp_int_Array_Index_Variable_1]",
+        "[Temp_int_Array_Index_Variable_2]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable_1]",
+        "[Temp_int_Loop_Counter_Variable_2]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_int_Variable]",
+        "[Temp_struct_Variable_1]",
+        "[Temp_struct_Variable_2]",
+        "[Temp_struct_Variable_3]",
+        "[Temp_struct_Variable_4]",
+        "[Temp_struct_Variable_5]",
+        "[Temp_struct_Variable_6]",
+        "[Temp_struct_Variable_7]",
+        "[Temp_struct_Variable_8]",
+        "[Temp_struct_Variable]",
+        "Color",
+        "import /Game/GameModes/Spawners/SpawnerPreviewMaterial->SpawnerPreviewMaterial",
+        "import /Script/Engine->Default__KismetArrayLibrary",
+        "import /Script/TBL->SpawnSequence",
+        "NODE_AddStaticMeshComponent-0",
+        "NODE_AddTextRenderComponent-0",
+        "NODE_AddTextRenderComponent-1",
+        "None"
+      ],
+      "writes": [
+        "[CallFunc_Add_IntInt_ReturnValue_1]",
+        "[CallFunc_Add_IntInt_ReturnValue_2]",
+        "[CallFunc_Add_IntInt_ReturnValue_3]",
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_AddComponent_ReturnValue_1]",
+        "[CallFunc_AddComponent_ReturnValue_2]",
+        "[CallFunc_AddComponent_ReturnValue]",
+        "[CallFunc_Array_AddUnique_ReturnValue_1]",
+        "[CallFunc_Array_AddUnique_ReturnValue]",
+        "[CallFunc_Array_Contains_ReturnValue]",
+        "[CallFunc_Array_Length_ReturnValue_1]",
+        "[CallFunc_Array_Length_ReturnValue_2]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_Concat_StrStr_ReturnValue_1]",
+        "[CallFunc_Concat_StrStr_ReturnValue_2]",
+        "[CallFunc_Concat_StrStr_ReturnValue]",
+        "[CallFunc_Conv_IntToFloat_ReturnValue_1]",
+        "[CallFunc_Conv_IntToFloat_ReturnValue]",
+        "[CallFunc_Conv_IntToText_ReturnValue]",
+        "[CallFunc_Conv_LinearColorToVector_ReturnValue]",
+        "[CallFunc_Conv_StringToText_ReturnValue]",
+        "[CallFunc_ConvertTransformToRelative_ReturnValue]",
+        "[CallFunc_CreateDynamicMaterialInstance_ReturnValue]",
+        "[CallFunc_Divide_FloatFloat_ReturnValue]",
+        "[CallFunc_FClamp_ReturnValue]",
+        "[CallFunc_GetAllActorsOfClass_OutActors]",
+        "[CallFunc_GetChildrenComponents_Children]",
+        "[CallFunc_GetMaxPlayerCount_ReturnValue]",
+        "[CallFunc_GetObjectName_ReturnValue_1]",
+        "[CallFunc_GetObjectName_ReturnValue]",
+        "[CallFunc_GetSpawnLocationAndComponent_ReturnValue]",
+        "[CallFunc_GetWorldType_ReturnValue_1]",
+        "[CallFunc_GetWorldType_ReturnValue]",
+        "[CallFunc_GreaterEqual_IntInt_ReturnValue]",
+        "[CallFunc_K2_AttachToComponent_ReturnValue_1]",
+        "[CallFunc_K2_AttachToComponent_ReturnValue]",
+        "[CallFunc_K2_GetComponentToWorld_ReturnValue]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue_1]",
+        "[CallFunc_K2_GetRootComponent_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue_1]",
+        "[CallFunc_Less_IntInt_ReturnValue_2]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_LessEqual_IntInt_ReturnValue]",
+        "[CallFunc_LinearColorLerp_ReturnValue]",
+        "[CallFunc_MakeTransform_ReturnValue_1]",
+        "[CallFunc_MakeTransform_ReturnValue]",
+        "[CallFunc_MakeVector_ReturnValue]",
+        "[CallFunc_NotEqual_IntInt_ReturnValue]",
+        "[CallFunc_Subtract_FloatFloat_ReturnValue]",
+        "[CallFunc_Subtract_IntInt_ReturnValue]",
+        "[CallFunc_Subtract_VectorVector_ReturnValue]",
+        "[ColorValue]",
+        "[DebugString]",
+        "[Fade time]",
+        "[K2Node_DynamicCast_AsStatic_Mesh_Component]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_SwitchEnum_CmpSuccess_1]",
+        "[K2Node_SwitchEnum_CmpSuccess]",
+        "[Max Players]",
+        "[Temp_byte_Variable]",
+        "[Temp_int_Array_Index_Variable_1]",
+        "[Temp_int_Array_Index_Variable_2]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable_1]",
+        "[Temp_int_Loop_Counter_Variable_2]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_int_Variable]",
+        "[Temp_struct_Variable_1]",
+        "[Temp_struct_Variable_2]",
+        "[Temp_struct_Variable_3]",
+        "[Temp_struct_Variable_4]",
+        "[Temp_struct_Variable_5]",
+        "[Temp_struct_Variable_6]",
+        "[Temp_struct_Variable_7]",
+        "[Temp_struct_Variable_8]",
+        "[Temp_struct_Variable]",
+        "[Time before starting fade]"
+      ],
+      "branches": 16,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_PushExecutionFlow 5349"
+          ],
+          "successors": [
+            {
+              "target": 5349,
+              "kind": "Push"
+            },
+            {
+              "target": 5,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 5349,
+          "code": [
+            "5349: EX_Return\r\n5350:     EX_Nothing"
+          ],
+          "successors": []
+        },
+        {
+          "id": 252,
+          "code": [
+            "252: EX_Let\r\n261:     EX_LocalVariable [CallFunc_GetWorldType_ReturnValue]\r\n270:     EX_CallMath import /Script/TBL->TBLSystemLibrary->GetWorldType\r\n279:         EX_Self",
+            "281: EX_LetBool\r\n282:     EX_LocalVariable [K2Node_SwitchEnum_CmpSuccess]\r\n291:     EX_CallMath import /Script/Engine->KismetMathLibrary->NotEqual_ByteByte\r\n300:         EX_LocalVariable [CallFunc_GetWorldType_ReturnValue]\r\n309:         EX_ByteConst 2",
+            "312: EX_JumpIfNot 327\r\n317:     EX_LocalVariable [K2Node_SwitchEnum_CmpSuccess]"
+          ],
+          "successors": [
+            {
+              "target": 327,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 326,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 100,
+          "code": [
+            "100: EX_Let\r\n109:     EX_LocalVariable [CallFunc_FClamp_ReturnValue]\r\n118:     EX_CallMath import /Script/Engine->KismetMathLibrary->FClamp\r\n127:         EX_InstanceVariable [Fade time]\r\n136:         EX_FloatConst 0\r\n141:         EX_InstanceVariable [CameraInterpTime]",
+            "151: EX_Let\r\n160:     EX_InstanceVariable [Fade time]\r\n169:     EX_LocalVariable [CallFunc_FClamp_ReturnValue]",
+            "178: EX_Let\r\n187:     EX_LocalVariable [CallFunc_Subtract_FloatFloat_ReturnValue]\r\n196:     EX_CallMath import /Script/Engine->KismetMathLibrary->Subtract_FloatFloat\r\n205:         EX_InstanceVariable [CameraInterpTime]\r\n214:         EX_InstanceVariable [Fade time]",
+            "224: EX_Let\r\n233:     EX_InstanceVariable [Time before starting fade]\r\n242:     EX_LocalVariable [CallFunc_Subtract_FloatFloat_ReturnValue]",
+            "251: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 1682,
+          "code": [
+            "1682: EX_SetArray\r\n1683:     EX_LocalVariable [CallFunc_GetAllActorsOfClass_OutActors]",
+            "1693: EX_CallMath import /Script/Engine->GameplayStatics->GetAllActorsOfClass\r\n1702:     EX_Self\r\n1703:     EX_ObjectConst import /Script/TBL->SpawnSequence\r\n1712:     EX_LocalVariable [CallFunc_GetAllActorsOfClass_OutActors]",
+            "1722: EX_Let\r\n1731:     EX_LocalVariable [Temp_int_Loop_Counter_Variable_2]\r\n1740:     EX_IntConst 0",
+            "1745: EX_Let\r\n1754:     EX_LocalVariable [Temp_int_Array_Index_Variable_1]\r\n1763:     EX_IntConst 0",
+            "1768: EX_Let\r\n1777:     EX_LocalVariable [CallFunc_Array_Length_ReturnValue_2]\r\n1786:     EX_Context\r\n1787:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n1808:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Length\r\n1817:             EX_LocalVariable [CallFunc_GetAllActorsOfClass_OutActors]",
+            "1827: EX_LetBool\r\n1828:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue_2]\r\n1837:     EX_CallMath import /Script/Engine->KismetMathLibrary->Less_IntInt\r\n1846:         EX_LocalVariable [Temp_int_Loop_Counter_Variable_2]\r\n1855:         EX_LocalVariable [CallFunc_Array_Length_ReturnValue_2]",
+            "1865: EX_JumpIfNot 2405\r\n1870:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue_2]"
+          ],
+          "successors": [
+            {
+              "target": 2405,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 1879,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 99,
+          "code": [
+            "99: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 327,
+          "code": [
+            "327: EX_Let\r\n336:     EX_LocalVariable [Temp_int_Loop_Counter_Variable_1]\r\n345:     EX_IntConst 0",
+            "350: EX_Let\r\n359:     EX_LocalVariable [Temp_int_Array_Index_Variable_2]\r\n368:     EX_IntConst 0",
+            "373: EX_LetObj\r\n374:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n383:     EX_FinalFunction import /Script/Engine->Actor->K2_GetRootComponent",
+            "393: EX_SetArray\r\n394:     EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "404: EX_Context\r\n405:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n426:     EX_FinalFunction import /Script/Engine->SceneComponent->GetChildrenComponents\r\n435:         EX_True\r\n436:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "446: EX_Let\r\n455:     EX_LocalVariable [CallFunc_Array_Length_ReturnValue]\r\n464:     EX_Context\r\n465:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n486:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Length\r\n495:             EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "505: EX_LetBool\r\n506:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]\r\n515:     EX_CallMath import /Script/Engine->KismetMathLibrary->Less_IntInt\r\n524:         EX_LocalVariable [Temp_int_Loop_Counter_Variable_1]\r\n533:         EX_LocalVariable [CallFunc_Array_Length_ReturnValue]",
+            "543: EX_PopExecutionFlowIfNot\r\n544:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 553,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 326,
+          "code": [
+            "326: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 553,
+          "code": [
+            "553: EX_Let\r\n562:     EX_LocalVariable [Temp_int_Array_Index_Variable_2]\r\n571:     EX_LocalVariable [Temp_int_Loop_Counter_Variable_1]",
+            "580: EX_PushExecutionFlow 1608"
+          ],
+          "successors": [
+            {
+              "target": 1608,
+              "kind": "Push"
+            },
+            {
+              "target": 585,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 1608,
+          "code": [
+            "1608: EX_Let\r\n1617:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]\r\n1626:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_IntInt\r\n1635:         EX_LocalVariable [Temp_int_Loop_Counter_Variable_1]\r\n1644:         EX_IntConst 1",
+            "1650: EX_Let\r\n1659:     EX_LocalVariable [Temp_int_Loop_Counter_Variable_1]\r\n1668:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]",
+            "1677: EX_Jump 373"
+          ],
+          "successors": [
+            {
+              "target": 373,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 792,
+          "code": [
+            "792: EX_Context\r\n793:     EX_LocalVariable [K2Node_DynamicCast_AsStatic_Mesh_Component]\r\n814:     EX_VirtualFunction SetMaterial\r\n827:         EX_IntConst 0\r\n832:         EX_ObjectConst import /Game/GameModes/Spawners/SpawnerPreviewMaterial->SpawnerPreviewMaterial",
+            "842: EX_LetObj\r\n843:     EX_LocalVariable [CallFunc_CreateDynamicMaterialInstance_ReturnValue]\r\n852:     EX_Context\r\n853:         EX_LocalVariable [K2Node_DynamicCast_AsStatic_Mesh_Component]\r\n874:         EX_VirtualFunction CreateDynamicMaterialInstance\r\n887:             EX_IntConst 0\r\n892:             EX_NoObject\r\n893:             EX_NameConst None",
+            "907: EX_Let\r\n916:     EX_LocalVariable [Temp_struct_Variable]\r\n925:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n938:         EX_FloatConst 0,59375\r\n943:         EX_FloatConst 0,046371\r\n948:         EX_FloatConst 0\r\n953:         EX_FloatConst 1",
+            "959: EX_Let\r\n968:     EX_LocalVariable [Temp_struct_Variable_1]\r\n977:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n990:         EX_FloatConst 1\r\n995:         EX_FloatConst 0,013171\r\n1000:         EX_FloatConst 0\r\n1005:         EX_FloatConst 1",
+            "1011: EX_Let\r\n1020:     EX_LocalVariable [Temp_struct_Variable_2]\r\n1029:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n1042:         EX_FloatConst 1\r\n1047:         EX_FloatConst 1\r\n1052:         EX_FloatConst 1\r\n1057:         EX_FloatConst 1",
+            "1063: EX_Let\r\n1072:     EX_LocalVariable [Temp_struct_Variable_3]\r\n1081:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n1094:         EX_FloatConst 0\r\n1099:         EX_FloatConst 0,071186\r\n1104:         EX_FloatConst 1\r\n1109:         EX_FloatConst 1",
+            "1115: EX_Let\r\n1124:     EX_LocalVariable [Temp_struct_Variable_4]\r\n1133:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n1146:         EX_FloatConst 0\r\n1151:         EX_FloatConst 0,066346\r\n1156:         EX_FloatConst 0,296875\r\n1161:         EX_FloatConst 1",
+            "1167: EX_Let\r\n1176:     EX_LocalVariable [Temp_struct_Variable_5]\r\n1185:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n1198:         EX_FloatConst 0,255208\r\n1203:         EX_FloatConst 0,255208\r\n1208:         EX_FloatConst 0,255208\r\n1213:         EX_FloatConst 1",
+            "1219: EX_Let\r\n1228:     EX_LocalVariable [Temp_struct_Variable_6]\r\n1237:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n1250:         EX_FloatConst 0,569082\r\n1255:         EX_FloatConst 0\r\n1260:         EX_FloatConst 0,755208\r\n1265:         EX_FloatConst 1",
+            "1271: EX_Let\r\n1280:     EX_LocalVariable [Temp_struct_Variable_7]\r\n1289:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n1302:         EX_FloatConst 0,806952\r\n1307:         EX_FloatConst 0,412543\r\n1312:         EX_FloatConst 0\r\n1317:         EX_FloatConst 1",
+            "1323: EX_Let\r\n1332:     EX_LocalVariable [Temp_struct_Variable_8]\r\n1341:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n1354:         EX_FloatConst 1\r\n1359:         EX_FloatConst 0,877018\r\n1364:         EX_FloatConst 0\r\n1369:         EX_FloatConst 1",
+            "1375: EX_Let\r\n1384:     EX_LocalVariable [Temp_byte_Variable]\r\n1393:     EX_InstanceVariable [SpawnerColor]",
+            "1402: EX_Context\r\n1403:     EX_LocalVariable [CallFunc_CreateDynamicMaterialInstance_ReturnValue]\r\n1424:     EX_FinalFunction import /Script/Engine->MaterialInstanceDynamic->SetVectorParameterValue\r\n1433:         EX_NameConst Color\r\n1446:         EX_SwitchValue\r\n1453:             EX_LocalVariable [Temp_byte_Variable]\r\n1446:             case 0:\r\n1462:                 EX_ByteConst 0\r\n1468:                 EX_LocalVariable [Temp_struct_Variable_2]\r\n1446:             case 1:\r\n1477:                 EX_ByteConst 1\r\n1483:                 EX_LocalVariable [Temp_struct_Variable_1]\r\n1446:             case 2:\r\n1492:                 EX_ByteConst 2\r\n1498:                 EX_LocalVariable [Temp_struct_Variable]\r\n1446:             case 3:\r\n1507:                 EX_ByteConst 3\r\n1513:                 EX_LocalVariable [Temp_struct_Variable_3]\r\n1446:             case 4:\r\n1522:                 EX_ByteConst 4\r\n1528:                 EX_LocalVariable [Temp_struct_Variable_4]\r\n1446:             case 5:\r\n1537:                 EX_ByteConst 5\r\n1543:                 EX_LocalVariable [Temp_struct_Variable_5]\r\n1446:             case 6:\r\n1552:                 EX_ByteConst 6\r\n1558:                 EX_LocalVariable [Temp_struct_Variable_6]\r\n1446:             case 7:\r\n1567:                 EX_ByteConst 7\r\n1573:                 EX_LocalVariable [Temp_struct_Variable_7]\r\n1446:             case 8:\r\n1582:                 EX_ByteConst 8\r\n1588:                 EX_LocalVariable [Temp_struct_Variable_8]\r\n1446:             default:\r\n1597:                 EX_LocalVariable [K2Node_Select_Default]",
+            "1607: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 2405,
+          "code": [
+            "2405: EX_Let\r\n2414:     EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n2423:     EX_VirtualFunction GetMaxPlayerCount",
+            "2437: EX_LetBool\r\n2438:     EX_LocalVariable [CallFunc_GreaterEqual_IntInt_ReturnValue]\r\n2447:     EX_CallMath import /Script/Engine->KismetMathLibrary->GreaterEqual_IntInt\r\n2456:         EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n2465:         EX_IntConst 30",
+            "2471: EX_JumpIfNot 5193\r\n2476:     EX_LocalVariable [CallFunc_GreaterEqual_IntInt_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 5193,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 2485,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 1879,
+          "code": [
+            "1879: EX_Let\r\n1888:     EX_LocalVariable [Temp_int_Array_Index_Variable_1]\r\n1897:     EX_LocalVariable [Temp_int_Loop_Counter_Variable_2]",
+            "1906: EX_PushExecutionFlow 2331"
+          ],
+          "successors": [
+            {
+              "target": 2331,
+              "kind": "Push"
+            },
+            {
+              "target": 1911,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 2331,
+          "code": [
+            "2331: EX_Let\r\n2340:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue_2]\r\n2349:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_IntInt\r\n2358:         EX_LocalVariable [Temp_int_Loop_Counter_Variable_2]\r\n2367:         EX_IntConst 1",
+            "2373: EX_Let\r\n2382:     EX_LocalVariable [Temp_int_Loop_Counter_Variable_2]\r\n2391:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue_2]",
+            "2400: EX_Jump 1768"
+          ],
+          "successors": [
+            {
+              "target": 1768,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 2054,
+          "code": [
+            "2054: EX_Context\r\n2055:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n2076:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n2085:         EX_LocalVariable [CallFunc_GetAllActorsOfClass_OutActors]\r\n2094:         EX_LocalVariable [Temp_int_Array_Index_Variable_1]\r\n2103:         EX_LocalVariable [CallFunc_Array_Get_Item_2]",
+            "2113: EX_Let\r\n2122:     EX_LocalVariable [CallFunc_Array_AddUnique_ReturnValue_1]\r\n2131:     EX_Context\r\n2132:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n2153:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_AddUnique\r\n2162:             EX_LocalVariable [SequencesThatUseMe]\r\n2171:             EX_LocalVariable [CallFunc_Array_Get_Item_2]",
+            "2181: EX_Context\r\n2182:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n2203:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n2212:         EX_LocalVariable [CallFunc_GetAllActorsOfClass_OutActors]\r\n2221:         EX_LocalVariable [Temp_int_Array_Index_Variable_1]\r\n2230:         EX_LocalVariable [CallFunc_Array_Get_Item_2]",
+            "2240: EX_Let\r\n2249:     EX_LocalVariable [CallFunc_Array_AddUnique_ReturnValue]\r\n2258:     EX_Context\r\n2259:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n2280:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_AddUnique\r\n2289:             EX_LocalVariable [FactionsThatUseMe]\r\n2298:             EX_Context\r\n2299:                 EX_LocalVariable [CallFunc_Array_Get_Item_2]\r\n2320:                 EX_InstanceVariable [Faction]",
+            "2330: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 5193,
+          "code": [
+            "5193: EX_Let\r\n5202:     EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n5211:     EX_VirtualFunction GetMaxPlayerCount",
+            "5225: EX_Let\r\n5234:     EX_LocalVariable [Max Players]\r\n5243:     EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]",
+            "5252: EX_Jump 2508",
+            "2508: EX_Let\r\n2517:     EX_LocalVariable [Temp_int_Variable]\r\n2526:     EX_IntConst 0",
+            "2531: EX_Let\r\n2540:     EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n2549:     EX_VirtualFunction GetMaxPlayerCount",
+            "2563: EX_Let\r\n2572:     EX_LocalVariable [CallFunc_Subtract_IntInt_ReturnValue]\r\n2581:     EX_CallMath import /Script/Engine->KismetMathLibrary->Subtract_IntInt\r\n2590:         EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n2599:         EX_IntConst 1",
+            "2605: EX_LetBool\r\n2606:     EX_LocalVariable [CallFunc_LessEqual_IntInt_ReturnValue]\r\n2615:     EX_CallMath import /Script/Engine->KismetMathLibrary->LessEqual_IntInt\r\n2624:         EX_LocalVariable [Temp_int_Variable]\r\n2633:         EX_LocalVariable [CallFunc_Subtract_IntInt_ReturnValue]",
+            "2643: EX_JumpIfNot 4410\r\n2648:     EX_LocalVariable [CallFunc_LessEqual_IntInt_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 4410,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 2657,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 2485,
+          "code": [
+            "2485: EX_Let\r\n2494:     EX_LocalVariable [Max Players]\r\n2503:     EX_IntConst 10"
+          ],
+          "successors": [
+            {
+              "target": 2508,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 4410,
+          "code": [
+            "4410: EX_Let\r\n4419:     EX_LocalVariable [CallFunc_MakeTransform_ReturnValue]\r\n4428:     EX_CallMath import /Script/Engine->KismetMathLibrary->MakeTransform\r\n4437:         EX_VectorConst 0,0,200\r\n4450:         EX_RotationConst 0,0,0\r\n4463:         EX_VectorConst 1,1,1",
+            "4477: EX_LetObj\r\n4478:     EX_LocalVariable [CallFunc_AddComponent_ReturnValue]\r\n4487:     EX_FinalFunction import /Script/Engine->Actor->AddComponent\r\n4496:         EX_NameConst NODE_AddTextRenderComponent-0\r\n4509:         EX_False\r\n4510:         EX_LocalVariable [CallFunc_MakeTransform_ReturnValue]\r\n4519:         EX_Self",
+            "4521: EX_Let\r\n4530:     EX_LocalVariable [CallFunc_GetObjectName_ReturnValue]\r\n4539:     EX_CallMath import /Script/Engine->KismetSystemLibrary->GetObjectName\r\n4548:         EX_Self",
+            "4550: EX_Let\r\n4559:     EX_LocalVariable [CallFunc_Concat_StrStr_ReturnValue]\r\n4568:     EX_CallMath import /Script/Engine->KismetStringLibrary->Concat_StrStr\r\n4577:         EX_LocalVariable [CallFunc_GetObjectName_ReturnValue]\r\n4586:         EX_StringConst \r\nSequences that use me:",
+            "4613: EX_Let\r\n4622:     EX_LocalVariable [DebugString]\r\n4631:     EX_LocalVariable [CallFunc_Concat_StrStr_ReturnValue]",
+            "4640: EX_Let\r\n4649:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n4658:     EX_IntConst 0",
+            "4663: EX_Let\r\n4672:     EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n4681:     EX_IntConst 0",
+            "4686: EX_Let\r\n4695:     EX_LocalVariable [CallFunc_Array_Length_ReturnValue_1]\r\n4704:     EX_Context\r\n4705:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n4726:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Length\r\n4735:             EX_LocalVariable [SequencesThatUseMe]",
+            "4745: EX_LetBool\r\n4746:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue_1]\r\n4755:     EX_CallMath import /Script/Engine->KismetMathLibrary->Less_IntInt\r\n4764:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n4773:         EX_LocalVariable [CallFunc_Array_Length_ReturnValue_1]",
+            "4783: EX_JumpIfNot 5114\r\n4788:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue_1]"
+          ],
+          "successors": [
+            {
+              "target": 5114,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 4797,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 2657,
+          "code": [
+            "2657: EX_PushExecutionFlow 4336"
+          ],
+          "successors": [
+            {
+              "target": 4336,
+              "kind": "Push"
+            },
+            {
+              "target": 2662,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 4336,
+          "code": [
+            "4336: EX_Let\r\n4345:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue_3]\r\n4354:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_IntInt\r\n4363:         EX_LocalVariable [Temp_int_Variable]\r\n4372:         EX_IntConst 1",
+            "4378: EX_Let\r\n4387:     EX_LocalVariable [Temp_int_Variable]\r\n4396:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue_3]",
+            "4405: EX_Jump 2531"
+          ],
+          "successors": [
+            {
+              "target": 2531,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 5257,
+          "code": [
+            "5257: EX_Let\r\n5266:     EX_LocalVariable [CallFunc_Conv_LinearColorToVector_ReturnValue]\r\n5275:     EX_CallMath import /Script/Engine->KismetMathLibrary->Conv_LinearColorToVector\r\n5284:         EX_LocalVariable [ColorValue]",
+            "5294: EX_Context\r\n5295:     EX_LocalVariable [CallFunc_AddComponent_ReturnValue_2]\r\n5316:     EX_FinalFunction import /Script/Engine->MeshComponent->SetVectorParameterValueOnMaterials\r\n5325:         EX_NameConst Color\r\n5338:         EX_LocalVariable [CallFunc_Conv_LinearColorToVector_ReturnValue]",
+            "5348: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 4009,
+          "code": [
+            "4009: EX_Let\r\n4018:     EX_LocalVariable [CallFunc_Conv_IntToFloat_ReturnValue]\r\n4027:     EX_CallMath import /Script/Engine->KismetMathLibrary->Conv_IntToFloat\r\n4036:         EX_LocalVariable [Temp_int_Variable]",
+            "4046: EX_Let\r\n4055:     EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n4064:     EX_VirtualFunction GetMaxPlayerCount",
+            "4078: EX_Let\r\n4087:     EX_LocalVariable [CallFunc_Subtract_IntInt_ReturnValue]\r\n4096:     EX_CallMath import /Script/Engine->KismetMathLibrary->Subtract_IntInt\r\n4105:         EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n4114:         EX_IntConst 1",
+            "4120: EX_Let\r\n4129:     EX_LocalVariable [CallFunc_Conv_IntToFloat_ReturnValue_1]\r\n4138:     EX_CallMath import /Script/Engine->KismetMathLibrary->Conv_IntToFloat\r\n4147:         EX_LocalVariable [CallFunc_Subtract_IntInt_ReturnValue]",
+            "4157: EX_Let\r\n4166:     EX_LocalVariable [CallFunc_Divide_FloatFloat_ReturnValue]\r\n4175:     EX_CallMath import /Script/Engine->KismetMathLibrary->Divide_FloatFloat\r\n4184:         EX_LocalVariable [CallFunc_Conv_IntToFloat_ReturnValue]\r\n4193:         EX_LocalVariable [CallFunc_Conv_IntToFloat_ReturnValue_1]",
+            "4203: EX_Let\r\n4212:     EX_LocalVariable [CallFunc_LinearColorLerp_ReturnValue]\r\n4221:     EX_CallMath import /Script/Engine->KismetMathLibrary->LinearColorLerp\r\n4230:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n4243:             EX_FloatConst 1\r\n4248:             EX_FloatConst 1\r\n4253:             EX_FloatConst 1\r\n4258:             EX_FloatConst 1\r\n4264:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n4277:             EX_FloatConst 0,161\r\n4282:             EX_FloatConst 0,161\r\n4287:             EX_FloatConst 0,161\r\n4292:             EX_FloatConst 1\r\n4298:         EX_LocalVariable [CallFunc_Divide_FloatFloat_ReturnValue]",
+            "4308: EX_Let\r\n4317:     EX_LocalVariable [ColorValue]\r\n4326:     EX_LocalVariable [CallFunc_LinearColorLerp_ReturnValue]",
+            "4335: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 5114,
+          "code": [
+            "5114: EX_Let\r\n5123:     EX_LocalVariable [CallFunc_Conv_StringToText_ReturnValue]\r\n5132:     EX_CallMath import /Script/Engine->KismetTextLibrary->Conv_StringToText\r\n5141:         EX_LocalVariable [DebugString]",
+            "5151: EX_Context\r\n5152:     EX_LocalVariable [CallFunc_AddComponent_ReturnValue]\r\n5173:     EX_FinalFunction import /Script/Engine->TextRenderComponent->K2_SetText\r\n5182:         EX_LocalVariable [CallFunc_Conv_StringToText_ReturnValue]",
+            "5192: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 4797,
+          "code": [
+            "4797: EX_Let\r\n4806:     EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n4815:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]",
+            "4824: EX_PushExecutionFlow 5040"
+          ],
+          "successors": [
+            {
+              "target": 5040,
+              "kind": "Push"
+            },
+            {
+              "target": 4829,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 5040,
+          "code": [
+            "5040: EX_Let\r\n5049:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue_1]\r\n5058:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_IntInt\r\n5067:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n5076:         EX_IntConst 1",
+            "5082: EX_Let\r\n5091:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n5100:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue_1]",
+            "5109: EX_Jump 4686"
+          ],
+          "successors": [
+            {
+              "target": 4686,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "code": [
+            "5: EX_FinalFunction import /Script/TBL->Spawner->SetupComponentsArray",
+            "15: EX_PushExecutionFlow 252"
+          ],
+          "successors": [
+            {
+              "target": 252,
+              "kind": "Push"
+            },
+            {
+              "target": 20,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 585,
+          "code": [
+            "585: EX_LetObj\r\n586:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n595:     EX_FinalFunction import /Script/Engine->Actor->K2_GetRootComponent",
+            "605: EX_SetArray\r\n606:     EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "616: EX_Context\r\n617:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue]\r\n638:     EX_FinalFunction import /Script/Engine->SceneComponent->GetChildrenComponents\r\n647:         EX_True\r\n648:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]",
+            "658: EX_Context\r\n659:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n680:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n689:         EX_LocalVariable [CallFunc_GetChildrenComponents_Children]\r\n698:         EX_LocalVariable [Temp_int_Array_Index_Variable_2]\r\n707:         EX_LocalVariable [CallFunc_Array_Get_Item]",
+            "717: EX_Let\r\n726:     EX_LocalVariable [K2Node_DynamicCast_AsStatic_Mesh_Component]\r\n735:     EX_DynamicCast import /Script/Engine->StaticMeshComponent\r\n744:         EX_LocalVariable [CallFunc_Array_Get_Item]",
+            "753: EX_Let\r\n762:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]\r\n771:     EX_PrimitiveCast ObjectToBool\r\n773:         EX_LocalVariable [K2Node_DynamicCast_AsStatic_Mesh_Component]",
+            "782: EX_PopExecutionFlowIfNot\r\n783:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]"
+          ],
+          "successors": [
+            {
+              "target": 792,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 1911,
+          "code": [
+            "1911: EX_Context\r\n1912:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n1933:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n1942:         EX_LocalVariable [CallFunc_GetAllActorsOfClass_OutActors]\r\n1951:         EX_LocalVariable [Temp_int_Array_Index_Variable_1]\r\n1960:         EX_LocalVariable [CallFunc_Array_Get_Item_2]",
+            "1970: EX_LetBool\r\n1971:     EX_LocalVariable [CallFunc_Array_Contains_ReturnValue]\r\n1980:     EX_Context\r\n1981:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n2002:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Contains\r\n2011:             EX_Context\r\n2012:                 EX_LocalVariable [CallFunc_Array_Get_Item_2]\r\n2033:                 EX_InstanceVariable [Spawners]\r\n2042:             EX_Self",
+            "2044: EX_PopExecutionFlowIfNot\r\n2045:     EX_LocalVariable [CallFunc_Array_Contains_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 2054,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 2662,
+          "code": [
+            "2662: EX_LetObj\r\n2663:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue_1]\r\n2672:     EX_FinalFunction import /Script/Engine->Actor->K2_GetRootComponent",
+            "2682: EX_Let\r\n2691:     EX_LocalVariable [CallFunc_K2_GetComponentToWorld_ReturnValue]\r\n2700:     EX_Context\r\n2701:         EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue_1]\r\n2722:         EX_FinalFunction import /Script/Engine->SceneComponent->K2_GetComponentToWorld",
+            "2732: EX_LetObj\r\n2733:     EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_ReturnValue]\r\n2742:     EX_VirtualFunction GetSpawnLocationAndComponent\r\n2755:         EX_LocalVariable [Temp_int_Variable]\r\n2764:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_OutTransform]\r\n2773:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnRadius]\r\n2782:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnHalfHeight]",
+            "2792: EX_Let\r\n2801:     EX_LocalVariable [CallFunc_ConvertTransformToRelative_ReturnValue]\r\n2810:     EX_CallMath import /Script/Engine->KismetMathLibrary->ConvertTransformToRelative\r\n2819:         EX_LocalVariable [CallFunc_K2_GetComponentToWorld_ReturnValue]\r\n2828:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_OutTransform]",
+            "2838: EX_CallMath import /Script/Engine->KismetMathLibrary->BreakTransform\r\n2847:     EX_LocalVariable [CallFunc_ConvertTransformToRelative_ReturnValue]\r\n2856:     EX_LocalVariable [CallFunc_BreakTransform_Location]\r\n2865:     EX_LocalVariable [CallFunc_BreakTransform_Rotation]\r\n2874:     EX_LocalVariable [CallFunc_BreakTransform_Scale]",
+            "2884: EX_Let\r\n2893:     EX_LocalVariable [CallFunc_MakeVector_ReturnValue]\r\n2902:     EX_CallMath import /Script/Engine->KismetMathLibrary->MakeVector\r\n2911:         EX_FloatConst 0\r\n2916:         EX_FloatConst 0\r\n2921:         EX_FloatConst 80",
+            "2927: EX_Let\r\n2936:     EX_LocalVariable [CallFunc_Subtract_VectorVector_ReturnValue]\r\n2945:     EX_CallMath import /Script/Engine->KismetMathLibrary->Subtract_VectorVector\r\n2954:         EX_LocalVariable [CallFunc_BreakTransform_Location]\r\n2963:         EX_LocalVariable [CallFunc_MakeVector_ReturnValue]",
+            "2973: EX_Let\r\n2982:     EX_LocalVariable [CallFunc_MakeTransform_ReturnValue_1]\r\n2991:     EX_CallMath import /Script/Engine->KismetMathLibrary->MakeTransform\r\n3000:         EX_LocalVariable [CallFunc_Subtract_VectorVector_ReturnValue]\r\n3009:         EX_LocalVariable [CallFunc_BreakTransform_Rotation]\r\n3018:         EX_LocalVariable [CallFunc_BreakTransform_Scale]",
+            "3028: EX_LetObj\r\n3029:     EX_LocalVariable [CallFunc_AddComponent_ReturnValue_1]\r\n3038:     EX_FinalFunction import /Script/Engine->Actor->AddComponent\r\n3047:         EX_NameConst NODE_AddTextRenderComponent-1\r\n3060:         EX_False\r\n3061:         EX_LocalVariable [CallFunc_MakeTransform_ReturnValue_1]\r\n3070:         EX_Self",
+            "3072: EX_Let\r\n3081:     EX_LocalVariable [CallFunc_Conv_IntToText_ReturnValue]\r\n3090:     EX_CallMath import /Script/Engine->KismetTextLibrary->Conv_IntToText\r\n3099:         EX_LocalVariable [Temp_int_Variable]\r\n3108:         EX_False\r\n3109:         EX_True\r\n3110:         EX_IntConst 1\r\n3115:         EX_IntConst 324",
+            "3121: EX_Context\r\n3122:     EX_LocalVariable [CallFunc_AddComponent_ReturnValue_1]\r\n3143:     EX_FinalFunction import /Script/Engine->TextRenderComponent->K2_SetText\r\n3152:         EX_LocalVariable [CallFunc_Conv_IntToText_ReturnValue]",
+            "3162: EX_LetObj\r\n3163:     EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_ReturnValue]\r\n3172:     EX_VirtualFunction GetSpawnLocationAndComponent\r\n3185:         EX_LocalVariable [Temp_int_Variable]\r\n3194:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_OutTransform]\r\n3203:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnRadius]\r\n3212:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnHalfHeight]",
+            "3222: EX_LetBool\r\n3223:     EX_LocalVariable [CallFunc_K2_AttachToComponent_ReturnValue_1]\r\n3232:     EX_Context\r\n3233:         EX_LocalVariable [CallFunc_AddComponent_ReturnValue_1]\r\n3254:         EX_FinalFunction import /Script/Engine->SceneComponent->K2_AttachToComponent\r\n3263:             EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_ReturnValue]\r\n3272:             EX_NameConst None\r\n3285:             EX_ByteConst 1\r\n3287:             EX_ByteConst 2\r\n3289:             EX_ByteConst 0\r\n3291:             EX_True",
+            "3293: EX_LetObj\r\n3294:     EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue_1]\r\n3303:     EX_FinalFunction import /Script/Engine->Actor->K2_GetRootComponent",
+            "3313: EX_Let\r\n3322:     EX_LocalVariable [CallFunc_K2_GetComponentToWorld_ReturnValue]\r\n3331:     EX_Context\r\n3332:         EX_LocalVariable [CallFunc_K2_GetRootComponent_ReturnValue_1]\r\n3353:         EX_FinalFunction import /Script/Engine->SceneComponent->K2_GetComponentToWorld",
+            "3363: EX_LetObj\r\n3364:     EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_ReturnValue]\r\n3373:     EX_VirtualFunction GetSpawnLocationAndComponent\r\n3386:         EX_LocalVariable [Temp_int_Variable]\r\n3395:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_OutTransform]\r\n3404:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnRadius]\r\n3413:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnHalfHeight]",
+            "3423: EX_Let\r\n3432:     EX_LocalVariable [CallFunc_ConvertTransformToRelative_ReturnValue]\r\n3441:     EX_CallMath import /Script/Engine->KismetMathLibrary->ConvertTransformToRelative\r\n3450:         EX_LocalVariable [CallFunc_K2_GetComponentToWorld_ReturnValue]\r\n3459:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_OutTransform]",
+            "3469: EX_CallMath import /Script/Engine->KismetMathLibrary->BreakTransform\r\n3478:     EX_LocalVariable [CallFunc_ConvertTransformToRelative_ReturnValue]\r\n3487:     EX_LocalVariable [CallFunc_BreakTransform_Location]\r\n3496:     EX_LocalVariable [CallFunc_BreakTransform_Rotation]\r\n3505:     EX_LocalVariable [CallFunc_BreakTransform_Scale]",
+            "3515: EX_Let\r\n3524:     EX_LocalVariable [CallFunc_MakeVector_ReturnValue]\r\n3533:     EX_CallMath import /Script/Engine->KismetMathLibrary->MakeVector\r\n3542:         EX_FloatConst 0\r\n3547:         EX_FloatConst 0\r\n3552:         EX_FloatConst 80",
+            "3558: EX_Let\r\n3567:     EX_LocalVariable [CallFunc_Subtract_VectorVector_ReturnValue]\r\n3576:     EX_CallMath import /Script/Engine->KismetMathLibrary->Subtract_VectorVector\r\n3585:         EX_LocalVariable [CallFunc_BreakTransform_Location]\r\n3594:         EX_LocalVariable [CallFunc_MakeVector_ReturnValue]",
+            "3604: EX_Let\r\n3613:     EX_LocalVariable [CallFunc_MakeTransform_ReturnValue_1]\r\n3622:     EX_CallMath import /Script/Engine->KismetMathLibrary->MakeTransform\r\n3631:         EX_LocalVariable [CallFunc_Subtract_VectorVector_ReturnValue]\r\n3640:         EX_LocalVariable [CallFunc_BreakTransform_Rotation]\r\n3649:         EX_LocalVariable [CallFunc_BreakTransform_Scale]",
+            "3659: EX_LetObj\r\n3660:     EX_LocalVariable [CallFunc_AddComponent_ReturnValue_2]\r\n3669:     EX_FinalFunction import /Script/Engine->Actor->AddComponent\r\n3678:         EX_NameConst NODE_AddStaticMeshComponent-0\r\n3691:         EX_False\r\n3692:         EX_LocalVariable [CallFunc_MakeTransform_ReturnValue_1]\r\n3701:         EX_Self",
+            "3703: EX_LetObj\r\n3704:     EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_ReturnValue]\r\n3713:     EX_VirtualFunction GetSpawnLocationAndComponent\r\n3726:         EX_LocalVariable [Temp_int_Variable]\r\n3735:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_OutTransform]\r\n3744:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnRadius]\r\n3753:         EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_SpawnHalfHeight]",
+            "3763: EX_LetBool\r\n3764:     EX_LocalVariable [CallFunc_K2_AttachToComponent_ReturnValue]\r\n3773:     EX_Context\r\n3774:         EX_LocalVariable [CallFunc_AddComponent_ReturnValue_2]\r\n3795:         EX_FinalFunction import /Script/Engine->SceneComponent->K2_AttachToComponent\r\n3804:             EX_LocalVariable [CallFunc_GetSpawnLocationAndComponent_ReturnValue]\r\n3813:             EX_NameConst None\r\n3826:             EX_ByteConst 1\r\n3828:             EX_ByteConst 2\r\n3830:             EX_ByteConst 0\r\n3832:             EX_True",
+            "3834: EX_PushExecutionFlow 5257"
+          ],
+          "successors": [
+            {
+              "target": 5257,
+              "kind": "Push"
+            },
+            {
+              "target": 3839,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 4829,
+          "code": [
+            "4829: EX_Let\r\n4838:     EX_LocalVariable [CallFunc_Concat_StrStr_ReturnValue_1]\r\n4847:     EX_CallMath import /Script/Engine->KismetStringLibrary->Concat_StrStr\r\n4856:         EX_LocalVariable [DebugString]\r\n4865:         EX_StringConst ",
+            "4870: EX_Context\r\n4871:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n4892:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n4901:         EX_LocalVariable [SequencesThatUseMe]\r\n4910:         EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n4919:         EX_LocalVariable [CallFunc_Array_Get_Item_1]",
+            "4929: EX_Let\r\n4938:     EX_LocalVariable [CallFunc_GetObjectName_ReturnValue_1]\r\n4947:     EX_CallMath import /Script/Engine->KismetSystemLibrary->GetObjectName\r\n4956:         EX_LocalVariable [CallFunc_Array_Get_Item_1]",
+            "4966: EX_Let\r\n4975:     EX_LocalVariable [CallFunc_Concat_StrStr_ReturnValue_2]\r\n4984:     EX_CallMath import /Script/Engine->KismetStringLibrary->Concat_StrStr\r\n4993:         EX_LocalVariable [CallFunc_Concat_StrStr_ReturnValue_1]\r\n5002:         EX_LocalVariable [CallFunc_GetObjectName_ReturnValue_1]",
+            "5012: EX_Let\r\n5021:     EX_LocalVariable [DebugString]\r\n5030:     EX_LocalVariable [CallFunc_Concat_StrStr_ReturnValue_2]",
+            "5039: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 20,
+          "code": [
+            "20: EX_PushExecutionFlow 100"
+          ],
+          "successors": [
+            {
+              "target": 100,
+              "kind": "Push"
+            },
+            {
+              "target": 25,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 3839,
+          "code": [
+            "3839: EX_Let\r\n3848:     EX_LocalVariable [ColorValue]\r\n3857:     EX_StructConst import /Script/CoreUObject->LinearColor\r\n3870:         EX_FloatConst 1\r\n3875:         EX_FloatConst 1\r\n3880:         EX_FloatConst 1\r\n3885:         EX_FloatConst 1",
+            "3891: EX_Let\r\n3900:     EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n3909:     EX_VirtualFunction GetMaxPlayerCount",
+            "3923: EX_Let\r\n3932:     EX_LocalVariable [CallFunc_Subtract_IntInt_ReturnValue]\r\n3941:     EX_CallMath import /Script/Engine->KismetMathLibrary->Subtract_IntInt\r\n3950:         EX_LocalVariable [CallFunc_GetMaxPlayerCount_ReturnValue]\r\n3959:         EX_IntConst 1",
+            "3965: EX_LetBool\r\n3966:     EX_LocalVariable [CallFunc_NotEqual_IntInt_ReturnValue]\r\n3975:     EX_CallMath import /Script/Engine->KismetMathLibrary->NotEqual_IntInt\r\n3984:         EX_LocalVariable [CallFunc_Subtract_IntInt_ReturnValue]\r\n3993:         EX_IntConst 0",
+            "3999: EX_PopExecutionFlowIfNot\r\n4000:     EX_LocalVariable [CallFunc_NotEqual_IntInt_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 4009,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 25,
+          "code": [
+            "25: EX_Let\r\n34:     EX_LocalVariable [CallFunc_GetWorldType_ReturnValue_1]\r\n43:     EX_CallMath import /Script/TBL->TBLSystemLibrary->GetWorldType\r\n52:         EX_Self",
+            "54: EX_LetBool\r\n55:     EX_LocalVariable [K2Node_SwitchEnum_CmpSuccess_1]\r\n64:     EX_CallMath import /Script/Engine->KismetMathLibrary->NotEqual_ByteByte\r\n73:         EX_LocalVariable [CallFunc_GetWorldType_ReturnValue_1]\r\n82:         EX_ByteConst 2",
+            "85: EX_JumpIfNot 1682\r\n90:     EX_LocalVariable [K2Node_SwitchEnum_CmpSuccess_1]"
+          ],
+          "successors": [
+            {
+              "target": 1682,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 99,
+              "kind": "JumpTrue"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "KillConstructablesInRadius",
+      "calls": [
+        "DestroyConstructable",
+        "import /Script/Engine->GameplayStatics->BreakHitResult",
+        "import /Script/Engine->KismetArrayLibrary->Array_Get",
+        "import /Script/Engine->KismetArrayLibrary->Array_Length",
+        "import /Script/Engine->KismetMathLibrary->Add_IntInt",
+        "import /Script/Engine->KismetMathLibrary->Add_VectorVector",
+        "import /Script/Engine->KismetMathLibrary->Less_IntInt",
+        "import /Script/Engine->KismetMathLibrary->Multiply_VectorFloat",
+        "import /Script/Engine->KismetSystemLibrary->SphereTraceMultiForObjects"
+      ],
+      "variables": [
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_Add_VectorVector_ReturnValue]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakHitResult_bBlockingHit]",
+        "[CallFunc_BreakHitResult_bInitialOverlap]",
+        "[CallFunc_BreakHitResult_Distance]",
+        "[CallFunc_BreakHitResult_FaceIndex]",
+        "[CallFunc_BreakHitResult_HitActor]",
+        "[CallFunc_BreakHitResult_HitBoneName]",
+        "[CallFunc_BreakHitResult_HitComponent]",
+        "[CallFunc_BreakHitResult_HitItem]",
+        "[CallFunc_BreakHitResult_ImpactNormal]",
+        "[CallFunc_BreakHitResult_ImpactPoint]",
+        "[CallFunc_BreakHitResult_Location]",
+        "[CallFunc_BreakHitResult_Normal]",
+        "[CallFunc_BreakHitResult_PhysMat]",
+        "[CallFunc_BreakHitResult_Time]",
+        "[CallFunc_BreakHitResult_TraceEnd]",
+        "[CallFunc_BreakHitResult_TraceStart]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_Multiply_VectorFloat_ReturnValue]",
+        "[CallFunc_SphereTraceMultiForObjects_OutHits]",
+        "[CallFunc_SphereTraceMultiForObjects_ReturnValue]",
+        "[ConstructableDestructionDistance]",
+        "[ConstructableDestructionRadius]",
+        "[ForwardVector]",
+        "[K2Node_DynamicCast_AsBP_Base_Deployable]",
+        "[K2Node_DynamicCast_AsConstructable_Plantable_Banner]",
+        "[K2Node_DynamicCast_bSuccess_1]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_MakeArray_Array]",
+        "[Location]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_object_Variable]",
+        "import /Script/Engine->Default__KismetArrayLibrary"
+      ],
+      "reads": [
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_Add_VectorVector_ReturnValue]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakHitResult_bBlockingHit]",
+        "[CallFunc_BreakHitResult_bInitialOverlap]",
+        "[CallFunc_BreakHitResult_Distance]",
+        "[CallFunc_BreakHitResult_FaceIndex]",
+        "[CallFunc_BreakHitResult_HitActor]",
+        "[CallFunc_BreakHitResult_HitBoneName]",
+        "[CallFunc_BreakHitResult_HitComponent]",
+        "[CallFunc_BreakHitResult_HitItem]",
+        "[CallFunc_BreakHitResult_ImpactNormal]",
+        "[CallFunc_BreakHitResult_ImpactPoint]",
+        "[CallFunc_BreakHitResult_Location]",
+        "[CallFunc_BreakHitResult_Normal]",
+        "[CallFunc_BreakHitResult_PhysMat]",
+        "[CallFunc_BreakHitResult_Time]",
+        "[CallFunc_BreakHitResult_TraceEnd]",
+        "[CallFunc_BreakHitResult_TraceStart]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_Multiply_VectorFloat_ReturnValue]",
+        "[CallFunc_SphereTraceMultiForObjects_OutHits]",
+        "[ConstructableDestructionDistance]",
+        "[ConstructableDestructionRadius]",
+        "[ForwardVector]",
+        "[K2Node_DynamicCast_AsBP_Base_Deployable]",
+        "[K2Node_DynamicCast_AsConstructable_Plantable_Banner]",
+        "[K2Node_DynamicCast_bSuccess_1]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_MakeArray_Array]",
+        "[Location]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_object_Variable]",
+        "import /Script/Engine->Default__KismetArrayLibrary"
+      ],
+      "writes": [
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_Add_VectorVector_ReturnValue]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_Multiply_VectorFloat_ReturnValue]",
+        "[CallFunc_SphereTraceMultiForObjects_OutHits]",
+        "[CallFunc_SphereTraceMultiForObjects_ReturnValue]",
+        "[K2Node_DynamicCast_AsBP_Base_Deployable]",
+        "[K2Node_DynamicCast_AsConstructable_Plantable_Banner]",
+        "[K2Node_DynamicCast_bSuccess_1]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_MakeArray_Array]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]"
+      ],
+      "branches": 4,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_PushExecutionFlow 946"
+          ],
+          "successors": [
+            {
+              "target": 946,
+              "kind": "Push"
+            },
+            {
+              "target": 5,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 946,
+          "code": [
+            "946: EX_Return\r\n947:     EX_Nothing"
+          ],
+          "successors": []
+        },
+        {
+          "id": 426,
+          "code": [
+            "426: EX_Let\r\n435:     EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n444:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]",
+            "453: EX_PushExecutionFlow 835"
+          ],
+          "successors": [
+            {
+              "target": 835,
+              "kind": "Push"
+            },
+            {
+              "target": 458,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 835,
+          "code": [
+            "835: EX_Let\r\n844:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]\r\n853:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_IntInt\r\n862:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n871:         EX_IntConst 1",
+            "877: EX_Let\r\n886:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n895:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]",
+            "904: EX_Jump 319",
+            "319: EX_Let\r\n328:     EX_LocalVariable [CallFunc_Array_Length_ReturnValue]\r\n337:     EX_Context\r\n338:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n359:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Length\r\n368:             EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]",
+            "378: EX_LetBool\r\n379:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]\r\n388:     EX_CallMath import /Script/Engine->KismetMathLibrary->Less_IntInt\r\n397:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n406:         EX_LocalVariable [CallFunc_Array_Length_ReturnValue]",
+            "416: EX_PopExecutionFlowIfNot\r\n417:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 426,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 755,
+          "code": [
+            "755: EX_Let\r\n764:     EX_LocalVariable [K2Node_DynamicCast_AsConstructable_Plantable_Banner]\r\n773:     EX_DynamicCast import /Game/Interactables/Deployables/PlantableBanner/Constructable_PlantableBanner->Constructable_PlantableBanner_C\r\n782:         EX_LocalVariable [K2Node_DynamicCast_AsBP_Base_Deployable]",
+            "791: EX_Let\r\n800:     EX_LocalVariable [K2Node_DynamicCast_bSuccess_1]\r\n809:     EX_PrimitiveCast ObjectToBool\r\n811:         EX_LocalVariable [K2Node_DynamicCast_AsConstructable_Plantable_Banner]",
+            "820: EX_JumpIfNot 909\r\n825:     EX_LocalVariable [K2Node_DynamicCast_bSuccess_1]"
+          ],
+          "successors": [
+            {
+              "target": 909,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 834,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 909,
+          "code": [
+            "909: EX_Context\r\n910:     EX_LocalVariable [K2Node_DynamicCast_AsBP_Base_Deployable]\r\n931:     EX_LocalVirtualFunction DestroyConstructable",
+            "945: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 834,
+          "code": [
+            "834: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 5,
+          "code": [
+            "5: EX_SetArray\r\n6:     EX_LocalVariable [K2Node_MakeArray_Array]\r\n15:     EX_ByteConst 1",
+            "18: EX_Let\r\n27:     EX_LocalVariable [CallFunc_Multiply_VectorFloat_ReturnValue]\r\n36:     EX_CallMath import /Script/Engine->KismetMathLibrary->Multiply_VectorFloat\r\n45:         EX_LocalVariable [ForwardVector]\r\n54:         EX_InstanceVariable [ConstructableDestructionDistance]",
+            "64: EX_Let\r\n73:     EX_LocalVariable [CallFunc_Add_VectorVector_ReturnValue]\r\n82:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_VectorVector\r\n91:         EX_LocalVariable [Location]\r\n100:         EX_LocalVariable [CallFunc_Multiply_VectorFloat_ReturnValue]",
+            "110: EX_SetArray\r\n111:     EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]",
+            "121: EX_LetBool\r\n122:     EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_ReturnValue]\r\n131:     EX_CallMath import /Script/Engine->KismetSystemLibrary->SphereTraceMultiForObjects\r\n140:         EX_Self\r\n141:         EX_LocalVariable [Location]\r\n150:         EX_LocalVariable [CallFunc_Add_VectorVector_ReturnValue]\r\n159:         EX_InstanceVariable [ConstructableDestructionRadius]\r\n168:         EX_LocalVariable [K2Node_MakeArray_Array]\r\n177:         EX_False\r\n178:         EX_LocalVariable [Temp_object_Variable]\r\n187:         EX_ByteConst 0\r\n189:         EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]\r\n198:         EX_True\r\n199:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n212:             EX_FloatConst 1\r\n217:             EX_FloatConst 0\r\n222:             EX_FloatConst 0\r\n227:             EX_FloatConst 1\r\n233:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n246:             EX_FloatConst 0\r\n251:             EX_FloatConst 1\r\n256:             EX_FloatConst 0\r\n261:             EX_FloatConst 1\r\n267:         EX_FloatConst 10",
+            "273: EX_Let\r\n282:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n291:     EX_IntConst 0",
+            "296: EX_Let\r\n305:     EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n314:     EX_IntConst 0"
+          ],
+          "successors": [
+            {
+              "target": 319,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 458,
+          "code": [
+            "458: EX_Context\r\n459:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n480:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n489:         EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]\r\n498:         EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n507:         EX_LocalVariable [CallFunc_Array_Get_Item]",
+            "517: EX_CallMath import /Script/Engine->GameplayStatics->BreakHitResult\r\n526:     EX_LocalVariable [CallFunc_Array_Get_Item]\r\n535:     EX_LocalVariable [CallFunc_BreakHitResult_bBlockingHit]\r\n544:     EX_LocalVariable [CallFunc_BreakHitResult_bInitialOverlap]\r\n553:     EX_LocalVariable [CallFunc_BreakHitResult_Time]\r\n562:     EX_LocalVariable [CallFunc_BreakHitResult_Distance]\r\n571:     EX_LocalVariable [CallFunc_BreakHitResult_Location]\r\n580:     EX_LocalVariable [CallFunc_BreakHitResult_ImpactPoint]\r\n589:     EX_LocalVariable [CallFunc_BreakHitResult_Normal]\r\n598:     EX_LocalVariable [CallFunc_BreakHitResult_ImpactNormal]\r\n607:     EX_LocalVariable [CallFunc_BreakHitResult_PhysMat]\r\n616:     EX_LocalVariable [CallFunc_BreakHitResult_HitActor]\r\n625:     EX_LocalVariable [CallFunc_BreakHitResult_HitComponent]\r\n634:     EX_LocalVariable [CallFunc_BreakHitResult_HitBoneName]\r\n643:     EX_LocalVariable [CallFunc_BreakHitResult_HitItem]\r\n652:     EX_LocalVariable [CallFunc_BreakHitResult_FaceIndex]\r\n661:     EX_LocalVariable [CallFunc_BreakHitResult_TraceStart]\r\n670:     EX_LocalVariable [CallFunc_BreakHitResult_TraceEnd]",
+            "680: EX_Let\r\n689:     EX_LocalVariable [K2Node_DynamicCast_AsBP_Base_Deployable]\r\n698:     EX_DynamicCast import /Game/Interactables/Deployables/BP_Base_Deployable->BP_Base_Deployable_C\r\n707:         EX_LocalVariable [CallFunc_BreakHitResult_HitActor]",
+            "716: EX_Let\r\n725:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]\r\n734:     EX_PrimitiveCast ObjectToBool\r\n736:         EX_LocalVariable [K2Node_DynamicCast_AsBP_Base_Deployable]",
+            "745: EX_PopExecutionFlowIfNot\r\n746:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]"
+          ],
+          "successors": [
+            {
+              "target": 755,
+              "kind": "JumpTrue"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    },
+    {
+      "name": "KillHorsesInRadius",
+      "calls": [
+        "GetDriver",
+        "import /Script/Engine->GameplayStatics->BreakHitResult",
+        "import /Script/Engine->KismetArrayLibrary->Array_Get",
+        "import /Script/Engine->KismetArrayLibrary->Array_Length",
+        "import /Script/Engine->KismetMathLibrary->Add_IntInt",
+        "import /Script/Engine->KismetMathLibrary->Add_VectorVector",
+        "import /Script/Engine->KismetMathLibrary->Less_IntInt",
+        "import /Script/Engine->KismetMathLibrary->Multiply_VectorFloat",
+        "import /Script/Engine->KismetSystemLibrary->IsValid",
+        "import /Script/Engine->KismetSystemLibrary->SphereTraceMultiForObjects",
+        "TBLKillPawn"
+      ],
+      "variables": [
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_Add_VectorVector_ReturnValue]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakHitResult_bBlockingHit]",
+        "[CallFunc_BreakHitResult_bInitialOverlap]",
+        "[CallFunc_BreakHitResult_Distance]",
+        "[CallFunc_BreakHitResult_FaceIndex]",
+        "[CallFunc_BreakHitResult_HitActor]",
+        "[CallFunc_BreakHitResult_HitBoneName]",
+        "[CallFunc_BreakHitResult_HitComponent]",
+        "[CallFunc_BreakHitResult_HitItem]",
+        "[CallFunc_BreakHitResult_ImpactNormal]",
+        "[CallFunc_BreakHitResult_ImpactPoint]",
+        "[CallFunc_BreakHitResult_Location]",
+        "[CallFunc_BreakHitResult_Normal]",
+        "[CallFunc_BreakHitResult_PhysMat]",
+        "[CallFunc_BreakHitResult_Time]",
+        "[CallFunc_BreakHitResult_TraceEnd]",
+        "[CallFunc_BreakHitResult_TraceStart]",
+        "[CallFunc_GetDriver_ReturnValue]",
+        "[CallFunc_IsValid_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_Multiply_VectorFloat_ReturnValue]",
+        "[CallFunc_SphereTraceMultiForObjects_OutHits]",
+        "[CallFunc_SphereTraceMultiForObjects_ReturnValue]",
+        "[ForwardVector]",
+        "[K2Node_DynamicCast_AsHorse]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_MakeArray_Array]",
+        "[Location]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_object_Variable]",
+        "import /Game/Blueprint/Libraries/BPF_Gameplay->Default__BPF_Gameplay_C",
+        "import /Script/Engine->Default__KismetArrayLibrary"
+      ],
+      "reads": [
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_Add_VectorVector_ReturnValue]",
+        "[CallFunc_Array_Get_Item]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_BreakHitResult_bBlockingHit]",
+        "[CallFunc_BreakHitResult_bInitialOverlap]",
+        "[CallFunc_BreakHitResult_Distance]",
+        "[CallFunc_BreakHitResult_FaceIndex]",
+        "[CallFunc_BreakHitResult_HitActor]",
+        "[CallFunc_BreakHitResult_HitBoneName]",
+        "[CallFunc_BreakHitResult_HitComponent]",
+        "[CallFunc_BreakHitResult_HitItem]",
+        "[CallFunc_BreakHitResult_ImpactNormal]",
+        "[CallFunc_BreakHitResult_ImpactPoint]",
+        "[CallFunc_BreakHitResult_Location]",
+        "[CallFunc_BreakHitResult_Normal]",
+        "[CallFunc_BreakHitResult_PhysMat]",
+        "[CallFunc_BreakHitResult_Time]",
+        "[CallFunc_BreakHitResult_TraceEnd]",
+        "[CallFunc_BreakHitResult_TraceStart]",
+        "[CallFunc_GetDriver_ReturnValue]",
+        "[CallFunc_IsValid_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_Multiply_VectorFloat_ReturnValue]",
+        "[CallFunc_SphereTraceMultiForObjects_OutHits]",
+        "[ForwardVector]",
+        "[K2Node_DynamicCast_AsHorse]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_MakeArray_Array]",
+        "[Location]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]",
+        "[Temp_object_Variable]",
+        "import /Game/Blueprint/Libraries/BPF_Gameplay->Default__BPF_Gameplay_C",
+        "import /Script/Engine->Default__KismetArrayLibrary"
+      ],
+      "writes": [
+        "[CallFunc_Add_IntInt_ReturnValue]",
+        "[CallFunc_Add_VectorVector_ReturnValue]",
+        "[CallFunc_Array_Length_ReturnValue]",
+        "[CallFunc_GetDriver_ReturnValue]",
+        "[CallFunc_IsValid_ReturnValue]",
+        "[CallFunc_Less_IntInt_ReturnValue]",
+        "[CallFunc_Multiply_VectorFloat_ReturnValue]",
+        "[CallFunc_SphereTraceMultiForObjects_OutHits]",
+        "[CallFunc_SphereTraceMultiForObjects_ReturnValue]",
+        "[K2Node_DynamicCast_AsHorse]",
+        "[K2Node_DynamicCast_bSuccess]",
+        "[K2Node_MakeArray_Array]",
+        "[Temp_int_Array_Index_Variable]",
+        "[Temp_int_Loop_Counter_Variable]"
+      ],
+      "branches": 4,
+      "blocks": [
+        {
+          "id": 0,
+          "code": [
+            "0: EX_PushExecutionFlow 959"
+          ],
+          "successors": [
+            {
+              "target": 959,
+              "kind": "Push"
+            },
+            {
+              "target": 5,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 959,
+          "code": [
+            "959: EX_Return\r\n960:     EX_Nothing"
+          ],
+          "successors": []
+        },
+        {
+          "id": 418,
+          "code": [
+            "418: EX_Let\r\n427:     EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n436:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]",
+            "445: EX_PushExecutionFlow 837"
+          ],
+          "successors": [
+            {
+              "target": 837,
+              "kind": "Push"
+            },
+            {
+              "target": 450,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 837,
+          "code": [
+            "837: EX_Let\r\n846:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]\r\n855:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_IntInt\r\n864:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n873:         EX_IntConst 1",
+            "879: EX_Let\r\n888:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n897:     EX_LocalVariable [CallFunc_Add_IntInt_ReturnValue]",
+            "906: EX_Jump 311",
+            "311: EX_Let\r\n320:     EX_LocalVariable [CallFunc_Array_Length_ReturnValue]\r\n329:     EX_Context\r\n330:         EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n351:         EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Length\r\n360:             EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]",
+            "370: EX_LetBool\r\n371:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]\r\n380:     EX_CallMath import /Script/Engine->KismetMathLibrary->Less_IntInt\r\n389:         EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n398:         EX_LocalVariable [CallFunc_Array_Length_ReturnValue]",
+            "408: EX_PopExecutionFlowIfNot\r\n409:     EX_LocalVariable [CallFunc_Less_IntInt_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 418,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 747,
+          "code": [
+            "747: EX_LetObj\r\n748:     EX_LocalVariable [CallFunc_GetDriver_ReturnValue]\r\n757:     EX_Context\r\n758:         EX_LocalVariable [K2Node_DynamicCast_AsHorse]\r\n779:         EX_VirtualFunction GetDriver",
+            "793: EX_LetBool\r\n794:     EX_LocalVariable [CallFunc_IsValid_ReturnValue]\r\n803:     EX_CallMath import /Script/Engine->KismetSystemLibrary->IsValid\r\n812:         EX_LocalVariable [CallFunc_GetDriver_ReturnValue]",
+            "822: EX_JumpIfNot 911\r\n827:     EX_LocalVariable [CallFunc_IsValid_ReturnValue]"
+          ],
+          "successors": [
+            {
+              "target": 911,
+              "kind": "JumpFalse"
+            },
+            {
+              "target": 836,
+              "kind": "JumpTrue"
+            }
+          ]
+        },
+        {
+          "id": 911,
+          "code": [
+            "911: EX_Context\r\n912:     EX_ObjectConst import /Game/Blueprint/Libraries/BPF_Gameplay->Default__BPF_Gameplay_C\r\n933:     EX_LocalVirtualFunction TBLKillPawn\r\n946:         EX_LocalVariable [K2Node_DynamicCast_AsHorse]\r\n955:         EX_NoObject\r\n956:         EX_Self",
+            "958: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 836,
+          "code": [
+            "836: EX_PopExecutionFlow"
+          ],
+          "successors": []
+        },
+        {
+          "id": 5,
+          "code": [
+            "5: EX_Let\r\n14:     EX_LocalVariable [CallFunc_Multiply_VectorFloat_ReturnValue]\r\n23:     EX_CallMath import /Script/Engine->KismetMathLibrary->Multiply_VectorFloat\r\n32:         EX_LocalVariable [ForwardVector]\r\n41:         EX_FloatConst 0",
+            "47: EX_Let\r\n56:     EX_LocalVariable [CallFunc_Add_VectorVector_ReturnValue]\r\n65:     EX_CallMath import /Script/Engine->KismetMathLibrary->Add_VectorVector\r\n74:         EX_LocalVariable [Location]\r\n83:         EX_LocalVariable [CallFunc_Multiply_VectorFloat_ReturnValue]",
+            "93: EX_SetArray\r\n94:     EX_LocalVariable [K2Node_MakeArray_Array]\r\n103:     EX_ByteConst 9",
+            "106: EX_SetArray\r\n107:     EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]",
+            "117: EX_LetBool\r\n118:     EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_ReturnValue]\r\n127:     EX_CallMath import /Script/Engine->KismetSystemLibrary->SphereTraceMultiForObjects\r\n136:         EX_Self\r\n137:         EX_LocalVariable [Location]\r\n146:         EX_LocalVariable [CallFunc_Add_VectorVector_ReturnValue]\r\n155:         EX_FloatConst 250\r\n160:         EX_LocalVariable [K2Node_MakeArray_Array]\r\n169:         EX_False\r\n170:         EX_LocalVariable [Temp_object_Variable]\r\n179:         EX_ByteConst 0\r\n181:         EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]\r\n190:         EX_True\r\n191:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n204:             EX_FloatConst 1\r\n209:             EX_FloatConst 0\r\n214:             EX_FloatConst 0\r\n219:             EX_FloatConst 1\r\n225:         EX_StructConst import /Script/CoreUObject->LinearColor\r\n238:             EX_FloatConst 0\r\n243:             EX_FloatConst 1\r\n248:             EX_FloatConst 0\r\n253:             EX_FloatConst 1\r\n259:         EX_FloatConst 10",
+            "265: EX_Let\r\n274:     EX_LocalVariable [Temp_int_Loop_Counter_Variable]\r\n283:     EX_IntConst 0",
+            "288: EX_Let\r\n297:     EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n306:     EX_IntConst 0"
+          ],
+          "successors": [
+            {
+              "target": 311,
+              "kind": "Normal"
+            }
+          ]
+        },
+        {
+          "id": 450,
+          "code": [
+            "450: EX_Context\r\n451:     EX_ObjectConst import /Script/Engine->Default__KismetArrayLibrary\r\n472:     EX_FinalFunction import /Script/Engine->KismetArrayLibrary->Array_Get\r\n481:         EX_LocalVariable [CallFunc_SphereTraceMultiForObjects_OutHits]\r\n490:         EX_LocalVariable [Temp_int_Array_Index_Variable]\r\n499:         EX_LocalVariable [CallFunc_Array_Get_Item]",
+            "509: EX_CallMath import /Script/Engine->GameplayStatics->BreakHitResult\r\n518:     EX_LocalVariable [CallFunc_Array_Get_Item]\r\n527:     EX_LocalVariable [CallFunc_BreakHitResult_bBlockingHit]\r\n536:     EX_LocalVariable [CallFunc_BreakHitResult_bInitialOverlap]\r\n545:     EX_LocalVariable [CallFunc_BreakHitResult_Time]\r\n554:     EX_LocalVariable [CallFunc_BreakHitResult_Distance]\r\n563:     EX_LocalVariable [CallFunc_BreakHitResult_Location]\r\n572:     EX_LocalVariable [CallFunc_BreakHitResult_ImpactPoint]\r\n581:     EX_LocalVariable [CallFunc_BreakHitResult_Normal]\r\n590:     EX_LocalVariable [CallFunc_BreakHitResult_ImpactNormal]\r\n599:     EX_LocalVariable [CallFunc_BreakHitResult_PhysMat]\r\n608:     EX_LocalVariable [CallFunc_BreakHitResult_HitActor]\r\n617:     EX_LocalVariable [CallFunc_BreakHitResult_HitComponent]\r\n626:     EX_LocalVariable [CallFunc_BreakHitResult_HitBoneName]\r\n635:     EX_LocalVariable [CallFunc_BreakHitResult_HitItem]\r\n644:     EX_LocalVariable [CallFunc_BreakHitResult_FaceIndex]\r\n653:     EX_LocalVariable [CallFunc_BreakHitResult_TraceStart]\r\n662:     EX_LocalVariable [CallFunc_BreakHitResult_TraceEnd]",
+            "672: EX_Let\r\n681:     EX_LocalVariable [K2Node_DynamicCast_AsHorse]\r\n690:     EX_DynamicCast import /Script/TBL->Horse\r\n699:         EX_LocalVariable [CallFunc_BreakHitResult_HitActor]",
+            "708: EX_Let\r\n717:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]\r\n726:     EX_PrimitiveCast ObjectToBool\r\n728:         EX_LocalVariable [K2Node_DynamicCast_AsHorse]",
+            "737: EX_PopExecutionFlowIfNot\r\n738:     EX_LocalVariable [K2Node_DynamicCast_bSuccess]"
+          ],
+          "successors": [
+            {
+              "target": 747,
+              "kind": "JumpTrue"
+            }
+          ]
+        }
+      ],
+      "diagnostics": []
+    }
+  ],
+  "callEdges": [
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "AddScore"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "HasMatchStarted"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->Actor->AddComponent"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->Actor->HasAuthority"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->Actor->K2_GetRootComponent"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->ActorComponent->ComponentHasTag"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->ActorComponent->K2_DestroyComponent"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->GameplayStatics->GetGameState"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Get"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Length"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->Add_IntInt"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->BreakTransform"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->BreakVector"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->FClamp"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->FTrunc"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->GetForwardVector"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->Greater_FloatFloat"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->Less_IntInt"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->MakeRotator"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->MakeVector"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->NotEqual_ByteByte"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetMathLibrary->Subtract_FloatFloat"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetSystemLibrary->Conv_SoftObjectReferenceToObject"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetSystemLibrary->Delay"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->KismetSystemLibrary->IsValid"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/Engine->SceneComponent->GetChildrenComponents"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/TBL->Spawner->OnSpawnedCharacter"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "import /Script/TBL->TBLSystemLibrary->GetStatsComponent"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "KillConstructablesInRadius"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "KillHorsesInRadius"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "OnKilled_Event_0"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "OnSpawnedPlayerKilled__DelegateSignature"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "SetViewTargetWithBlend"
+    },
+    {
+      "from": "ExecuteUbergraph_BaseSpawner",
+      "to": "StartCameraFade"
+    },
+    {
+      "from": "OnSpawningCharacter",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "OnSpawnedCharacter",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "StopPlayerKilledStageAction",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "OnKilled_Event_0",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "OnPossessedCharacter",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "Interp rot",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "Interp Z",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "Add HUD Marker to Wave",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "Cinematics_ControllerPossessedPawn",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "ReceiveBeginPlay",
+      "to": "ExecuteUbergraph_BaseSpawner"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "CreateDynamicMaterialInstance"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "GetMaxPlayerCount"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "GetSpawnLocationAndComponent"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->Actor->AddComponent"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->Actor->K2_GetRootComponent"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->GameplayStatics->GetAllActorsOfClass"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_AddUnique"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Contains"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Get"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Length"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Add_IntInt"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->BreakTransform"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Conv_IntToFloat"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Conv_LinearColorToVector"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->ConvertTransformToRelative"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Divide_FloatFloat"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->FClamp"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->GreaterEqual_IntInt"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Less_IntInt"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->LessEqual_IntInt"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->LinearColorLerp"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->MakeTransform"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->MakeVector"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->NotEqual_ByteByte"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->NotEqual_IntInt"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Subtract_FloatFloat"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Subtract_IntInt"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetMathLibrary->Subtract_VectorVector"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetStringLibrary->Concat_StrStr"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetSystemLibrary->GetObjectName"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetTextLibrary->Conv_IntToText"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->KismetTextLibrary->Conv_StringToText"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->MaterialInstanceDynamic->SetVectorParameterValue"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->MeshComponent->SetVectorParameterValueOnMaterials"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->SceneComponent->GetChildrenComponents"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->SceneComponent->K2_AttachToComponent"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->SceneComponent->K2_GetComponentToWorld"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/Engine->TextRenderComponent->K2_SetText"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/TBL->Spawner->SetupComponentsArray"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "import /Script/TBL->TBLSystemLibrary->GetWorldType"
+    },
+    {
+      "from": "UserConstructionScript",
+      "to": "SetMaterial"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "DestroyConstructable"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->GameplayStatics->BreakHitResult"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Get"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Length"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Add_IntInt"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Add_VectorVector"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Less_IntInt"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Multiply_VectorFloat"
+    },
+    {
+      "from": "KillConstructablesInRadius",
+      "to": "import /Script/Engine->KismetSystemLibrary->SphereTraceMultiForObjects"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "GetDriver"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->GameplayStatics->BreakHitResult"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Get"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetArrayLibrary->Array_Length"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Add_IntInt"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Add_VectorVector"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Less_IntInt"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetMathLibrary->Multiply_VectorFloat"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetSystemLibrary->IsValid"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "import /Script/Engine->KismetSystemLibrary->SphereTraceMultiForObjects"
+    },
+    {
+      "from": "KillHorsesInRadius",
+      "to": "TBLKillPawn"
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "unsupported_expression",
+      "message": "Unimplemented non-EX_IntConst",
+      "function": "ExecuteUbergraph_BaseSpawner"
+    }
+  ]
+}

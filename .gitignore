@@ -1,7 +1,19 @@
+# Replaceable local analyzer release payload.
+/bin/
 
-# Beads / Dolt files (added by bd init)
-.dolt/
-*.db
-.beads-credential-key
-.beads/proxieddb/
-*.gate.lock*
+# Generated output from the drag-and-drop scripts.
+**/*-outputs/
+**/*-kismet-output/
+
+# Local scratch/test output.
+/test-output/
+/test-tree-output/
+
+# Local logs and temporary files.
+.beads.gate.lock
+.vscode/
+*.log
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini
