@@ -27,8 +27,10 @@ Override it with `KISMET_LLM_DATA` when serving another game or generated tree.
 
 ## Initial tools
 
-- `find_assets` searches asset paths, classes, and function names.
-- `get_asset_summary` returns concise asset metadata and function summaries.
+- `find_assets` searches asset paths, classes, function names, property names,
+  and default (CDO) value contents.
+- `get_asset_summary` returns concise asset metadata, function summaries, and
+  (when present) the `defaultValues` array.
 - `get_function_summary` returns one function without CFG blocks by default;
   pass `includeBlocks: true` for bounded control-flow evidence.
 - `find_references` searches indexed function-call and property references.
@@ -43,6 +45,17 @@ Override it with `KISMET_LLM_DATA` when serving another game or generated tree.
 All results are read-only and bounded. Empty assets remain discoverable through
 the manifest but have no semantic output document.
 
+## Default values (CDO)
+
+Assets that have no Blueprint graph (for example utility AI behavior blueprints)
+hold their meaningful data in the Class Default Object rather than kismet
+bytecode. When the tree is generated with default values (`KISMET_LLM_DEFAULTS=1`
+for `produce-llm.bat`, or `--defaults` on `gen-llm-tree`/`to-llm-json`), each
+document gains a `defaultValues` array. Such assets become `parseStatus:
+"complete"` and are indexed, so `find_assets` can locate them by a default value
+and `get_asset_summary` returns those values. See `docs/schema.md` for the field
+schema.
+
 ## Test
 
 From the workspace root:
@@ -56,7 +69,7 @@ python3 -m unittest discover -s mcp_server -p 'test_*.py'
   JSON-RPC lifecycle, tool results, and error handling against the static
   fixture catalog in `fixtures/tree/`.
 
-The fixture catalog (one complete, one partial, one empty asset) is git-tracked
-so tests stay deterministic without the full generated tree. Tests write their
-SQLite index to a temporary directory via `KISMET_MCP_INDEX`, keeping the
-fixture tree clean.
+The fixture catalog (a complete asset, a partial one, an empty one, and a
+graph-less asset that carries only `defaultValues`) is git-tracked so tests stay
+deterministic without the full generated tree. Tests write their SQLite index to
+a temporary directory via `KISMET_MCP_INDEX`, keeping the fixture tree clean.

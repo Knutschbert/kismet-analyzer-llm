@@ -10,6 +10,8 @@ if "%~1"=="" (
 set "INPUT=%~1"
 if not defined KISMET_UE_VERSION set "KISMET_UE_VERSION=VER_UE4_25"
 if not defined KISMET_ANALYZER_EXE set "KISMET_ANALYZER_EXE=%~dp0..\bin\kismet-analyzer.exe"
+set "DEFAULTS_FLAG="
+if defined KISMET_LLM_DEFAULTS if "%KISMET_LLM_DEFAULTS%"=="1" set "DEFAULTS_FLAG=--defaults"
 
 if not exist "%KISMET_ANALYZER_EXE%" (
     echo Analyzer not found: "%KISMET_ANALYZER_EXE%"
@@ -32,7 +34,7 @@ if not exist "%OUTPUT%" mkdir "%OUTPUT%"
 
 echo Generating semantic LLM JSON for "%INPUT%"
 echo Output: "%OUTPUT%\%~n1.llm.json"
-"%KISMET_ANALYZER_EXE%" --ue-version %KISMET_UE_VERSION% to-llm-json "%INPUT%" > "%OUTPUT%\%~n1.llm.json"
+"%KISMET_ANALYZER_EXE%" --ue-version %KISMET_UE_VERSION% to-llm-json %DEFAULTS_FLAG% "%INPUT%" > "%OUTPUT%\%~n1.llm.json"
 if errorlevel 1 (
     echo Semantic export failed.
     exit /b 10
@@ -54,7 +56,7 @@ if not exist "%OUTPUT%" mkdir "%OUTPUT%"
 
 echo Generating semantic LLM JSON tree for "%SOURCE%"
 echo Output: "%OUTPUT%"
-"%KISMET_ANALYZER_EXE%" --ue-version %KISMET_UE_VERSION% gen-llm-tree "%SOURCE%" "%OUTPUT%"
+"%KISMET_ANALYZER_EXE%" --ue-version %KISMET_UE_VERSION% gen-llm-tree %DEFAULTS_FLAG% "%SOURCE%" "%OUTPUT%"
 if errorlevel 1 (
     echo Semantic tree export failed.
     exit /b 11

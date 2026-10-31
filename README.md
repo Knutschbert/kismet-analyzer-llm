@@ -108,7 +108,8 @@ The wrapper uses `bin\kismet-analyzer.exe` and defaults to `VER_UE4_25`.
 Without an explicit output argument, generated files are placed under the
 git-ignored `output\generated\` directory inside this workspace rather than
 beside the extracted assets. Empty semantic assets are omitted; they remain in
-`manifest.json` with `parseStatus: "empty"` and no output path.
+`manifest.json` with `parseStatus: "empty"` and no output path. Assets that carry
+only CDO default values are omitted too unless `KISMET_LLM_DEFAULTS=1` is set.
 
 For a directory dropped without an explicit output path, the source directory
 name is retained under `output\generated\tree\` (for example,
@@ -119,6 +120,15 @@ You can override the analyzer and engine version for a session:
 ```bat
 set KISMET_UE_VERSION=VER_UE4_27
 set KISMET_ANALYZER_EXE=P:\other\build\kismet-analyzer.exe
+```
+
+To also dump each asset's CDO default values (for graph-less, property-only
+assets like utility AI behaviors), set `KISMET_LLM_DEFAULTS=1` for the session.
+Without it, default values are not emitted and output is identical to earlier
+versions.
+
+```bat
+set KISMET_LLM_DEFAULTS=1
 ```
 
 ## MCP guidance
