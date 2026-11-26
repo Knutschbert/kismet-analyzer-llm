@@ -31,6 +31,14 @@ class ServerTests(unittest.TestCase):
                             "parseStatus": "empty",
                             "reason": "no_semantic_content",
                         },
+                        {
+                            "asset": "Content/V1Asset.uasset",
+                            "output": "Content/V1Asset.llm.json",
+                            "class": "V1Asset_C",
+                            "functions": [],
+                            "parseStatus": "complete",
+                            "reason": None,
+                        },
                     ],
                 }
             ),
@@ -39,7 +47,7 @@ class ServerTests(unittest.TestCase):
         (self.root / "Content/BP_Test.llm.json").write_text(
             json.dumps(
                 {
-                    "schemaVersion": 1,
+                    "schemaVersion": 2,
                     "asset": "Content/BP_Test.uasset",
                     "class": "BP_Test_C",
                     "functions": [
@@ -63,7 +71,41 @@ class ServerTests(unittest.TestCase):
                         },
                     ],
                     "properties": [],
+                    "exportedObjects": [
+                        {
+                            "name": "SpwnS4cAtkVIP1",
+                            "class": "BP_FreeableVIPSpawner_C",
+                            "outer": "PersistentLevel",
+                            "path": "PersistentLevel.SpwnS4cAtkVIP1",
+                            "properties": [
+                                {
+                                    "name": "SpawnWaveParams",
+                                    "type": "Struct",
+                                    "value": "SpawnWaveParamOverrides(SpecialSpawnSpec=WarHeroSpawn_C)",
+                                },
+                                {
+                                    "name": "StreamingTextureData",
+                                    "type": "Array",
+                                    "value": "EXCLUDED_FROM_SEARCH_XYZ",
+                                },
+                            ],
+                        }
+                    ],
                     "callEdges": [{"from": "BeginPlay", "to": "Initialize"}],
+                    "diagnostics": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        (self.root / "Content/V1Asset.llm.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": 1,
+                    "asset": "Content/V1Asset.uasset",
+                    "class": "V1Asset_C",
+                    "functions": [],
+                    "properties": [],
+                    "callEdges": [],
                     "diagnostics": [],
                 }
             ),
@@ -89,6 +131,86 @@ class ServerTests(unittest.TestCase):
             {"asset": "Content/BP_Test.uasset", "function": "BeginPlay", "includeBlocks": True},
         )
         self.assertEqual(len(detailed["structuredContent"]["blocks"]), 1)
+
+    def test_asset_summary_returns_bounded_exported_objects(self):
+        summary = self.server.call_tool(
+            "get_asset_summary",
+            {"asset": "Content/BP_Test.uasset", "maxExportedObjects": 1},
+        )["structuredContent"]
+
+        self.assertEqual(summary["schemaVersion"], 2)
+        self.assertEqual(summary["exportedObjects"][0]["class"], "BP_FreeableVIPSpawner_C")
+        self.assertFalse(summary["exportedObjectsTruncated"])
+
+    def test_list_exported_objects_filters_by_class_and_property(self):
+        listed = self.server.call_tool(
+            "list_exported_objects",
+            {
+                "asset": "Content/BP_Test.uasset",
+                "className": "FreeableVIP",
+                "propertyName": "SpawnWaveParams",
+            },
+        )["structuredContent"]
+
+        self.assertTrue(listed["exportedObjectsAvailable"])
+        self.assertEqual(listed["total"], 1)
+        self.assertEqual(listed["results"][0]["path"], "PersistentLevel.SpwnS4cAtkVIP1")
+        self.assertEqual(listed["results"][0]["propertyCount"], 2)
+
+        none = self.server.call_tool(
+            "list_exported_objects",
+            {"asset": "Content/BP_Test.uasset", "className": "CagedSpawner"},
+        )["structuredContent"]
+        self.assertEqual(none["total"], 0)
+
+    def test_get_exported_object_by_stable_path(self):
+        result = self.server.call_tool(
+            "get_exported_object",
+            {"asset": "Content/BP_Test.uasset", "path": "PersistentLevel.SpwnS4cAtkVIP1"},
+        )["structuredContent"]
+
+        self.assertTrue(result["found"])
+        self.assertFalse(result["ambiguous"])
+        self.assertEqual(result["exportedObject"]["class"], "BP_FreeableVIPSpawner_C")
+        self.assertIn("WarHeroSpawn_C", result["exportedObject"]["properties"][0]["value"])
+
+    def test_find_exported_objects_is_indexed_and_bounded(self):
+        found = self.server.call_tool(
+            "find_exported_objects",
+            {"className": "FreeableVIPSpawner", "propertyValue": "WarHeroSpawn_C", "limit": 1},
+        )["structuredContent"]
+
+        self.assertEqual(found["total"], 1)
+        self.assertEqual(found["results"][0]["asset"], "Content/BP_Test.uasset")
+        self.assertEqual(found["coverage"]["assetsWithExportedObjects"], 1)
+        self.assertGreaterEqual(found["coverage"]["totalAssets"], 2)
+
+        exact = self.server.call_tool(
+            "find_exported_objects", {"classExact": "BP_FreeableVIPSpawner_C"}
+        )["structuredContent"]
+        self.assertEqual(exact["total"], 1)
+        self.assertEqual(exact["results"][0]["path"], "PersistentLevel.SpwnS4cAtkVIP1")
+
+    def test_excluded_property_is_kept_but_not_globally_searched(self):
+        text = self.server.call_tool("find_exported_objects", {"query": "EXCLUDED_FROM_SEARCH_XYZ"})["structuredContent"]
+        self.assertEqual(text["total"], 0)
+
+        explicit = self.server.call_tool(
+            "find_exported_objects", {"propertyName": "StreamingTextureData"}
+        )["structuredContent"]
+        self.assertEqual(explicit["total"], 1)
+
+    def test_schema_v1_exported_objects_are_unknown(self):
+        listed = self.server.call_tool(
+            "list_exported_objects", {"asset": "Content/V1Asset.uasset"}
+        )["structuredContent"]
+        self.assertFalse(listed["exportedObjectsAvailable"])
+        self.assertIsNotNone(listed["coverageNote"])
+
+        fetched = self.server.call_tool(
+            "get_exported_object", {"asset": "Content/V1Asset.uasset", "path": "Missing"}
+        )["structuredContent"]
+        self.assertFalse(fetched["found"])
 
     def test_call_graph_and_reference_search(self):
         graph = self.server.call_tool(

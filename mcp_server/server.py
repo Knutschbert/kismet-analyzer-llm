@@ -32,7 +32,28 @@ SCAN_WORKERS = min(8, os.cpu_count() or 1)
 # 2: adds the precomputed lowercase `search` column for find_assets.
 # 3: adds the `parent` column + index for class-hierarchy queries.
 # 4: leaner flattened search blob (name/value text instead of raw JSON).
-SCHEMA_VERSION = "4"
+# 5: adds the exported_objects table for schema-v2 semantic documents.
+# 6: records which assets actually carry exported-object inventories so v1 documents
+#    are reported as unknown rather than as an empty inventory.
+# 7: excludes verbose, low-value cooked metadata from the exported-object search blob.
+SCHEMA_VERSION = "7"
+
+# These properties are retained in the detailed exportedObjects properties payload but are
+# omitted from the global search text. They are high-volume cooked/build metadata that is not
+# useful for class, map, or spawner discovery queries.
+SEARCH_EXCLUDED_PROPERTIES = {
+    "AggGeom",
+    "AlternateSkinWeights",
+    "BodyInstance",
+    "CreationMethod",
+    "PrecompiledEvaluationTemplate",
+    "SplineCurves",
+    "StaticMeshComponent",
+    "StreamingTextureData",
+    "UCSModifiedProperties",
+    "UCSSerializationIndex",
+    "bNetAddressable",
+}
 
 
 def _json_result(value: Any) -> dict[str, Any]:
@@ -97,7 +118,8 @@ CREATE TABLE IF NOT EXISTS assets (
     asset TEXT PRIMARY KEY, class TEXT, parent TEXT, output TEXT, parse_status TEXT,
     reason TEXT, functions TEXT NOT NULL, properties TEXT NOT NULL,
     default_values TEXT NOT NULL DEFAULT '[]',
-    search TEXT NOT NULL DEFAULT ''
+    search TEXT NOT NULL DEFAULT '',
+    exported_objects_available INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS functions (
     asset TEXT NOT NULL, name TEXT NOT NULL, calls TEXT NOT NULL,
@@ -108,8 +130,15 @@ CREATE TABLE IF NOT EXISTS references_index (
     asset TEXT NOT NULL, function TEXT NOT NULL, target TEXT NOT NULL,
     kind TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS exported_objects (
+    asset TEXT NOT NULL, path TEXT NOT NULL, name TEXT NOT NULL, class TEXT,
+    outer TEXT, properties TEXT NOT NULL, search TEXT NOT NULL,
+    PRIMARY KEY(asset, path)
+);
 CREATE INDEX IF NOT EXISTS references_target ON references_index(target);
 CREATE INDEX IF NOT EXISTS assets_parent ON assets(parent);
+CREATE INDEX IF NOT EXISTS exported_objects_class ON exported_objects(class);
+CREATE INDEX IF NOT EXISTS exported_objects_name ON exported_objects(name);
 """
 
 
@@ -168,6 +197,7 @@ class Catalog:
                 # Drop and re-derive: cheaper and safer than in-place backfills.
                 db.executescript(
                     "DROP TABLE IF EXISTS references_index;"
+                    "DROP TABLE IF EXISTS exported_objects;"
                     "DROP TABLE IF EXISTS functions;"
                     "DROP TABLE IF EXISTS assets;"
                     "DROP TABLE IF EXISTS meta;"
@@ -187,6 +217,7 @@ class Catalog:
             db.execute("DELETE FROM assets")
             db.execute("DELETE FROM functions")
             db.execute("DELETE FROM references_index")
+            db.execute("DELETE FROM exported_objects")
 
             def _safe_load(entry: dict[str, Any]) -> dict[str, Any]:
                 try:
@@ -201,6 +232,7 @@ class Catalog:
                 properties = document.get("properties", [])
                 functions = document.get("functions", [])
                 default_values = document.get("defaultValues", [])
+                exported_objects = document.get("exportedObjects", [])
                 functions_blob = json.dumps(entry.get("functions", [f.get("name") for f in functions]))
                 properties_blob = json.dumps(properties)
                 defaults_blob = json.dumps(default_values)
@@ -225,7 +257,7 @@ class Catalog:
                     + default_parts
                 ).lower()
                 db.execute(
-                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         asset,
                         class_name,
@@ -237,6 +269,7 @@ class Catalog:
                         properties_blob,
                         defaults_blob,
                         search_blob,
+                        1 if "exportedObjects" in document else 0,
                     ),
                 )
                 for function in functions:
@@ -269,6 +302,27 @@ class Catalog:
                             "INSERT INTO references_index VALUES (?, ?, ?, ?)",
                             (asset, name, target, "property_write"),
                         )
+                for obj in exported_objects:
+                    properties = obj.get("properties", [])
+                    parts: list[str] = []
+                    for key, value in obj.items():
+                        if key != "properties":
+                            _flatten_value(value, parts)
+                    for item in properties:
+                        if item.get("name") not in SEARCH_EXCLUDED_PROPERTIES:
+                            _flatten_value(item, parts)
+                    db.execute(
+                        "INSERT OR REPLACE INTO exported_objects VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            asset,
+                            obj.get("path") or obj.get("name", ""),
+                            obj.get("name", ""),
+                            obj.get("class"),
+                            obj.get("outer"),
+                            json.dumps(properties),
+                            " ".join(parts).lower(),
+                        ),
+                    )
 
             # Doc reads release the GIL, so a small thread pool overlaps the
             # per-request latency that dominates slow mounts (9p). JSON
@@ -581,6 +635,176 @@ class Catalog:
             raise FileNotFoundError(f"Indexed semantic document not found: {path}")
         return json.loads(path.read_text(encoding="utf-8"))
 
+    @staticmethod
+    def _exported_objects_available(document: dict[str, Any]) -> bool:
+        return "exportedObjects" in document
+
+    @staticmethod
+    def _compact_exported_object(obj: dict[str, Any]) -> dict[str, Any]:
+        properties = obj.get("properties", [])
+        return {
+            "path": obj.get("path") or obj.get("name", ""),
+            "name": obj.get("name", ""),
+            "class": obj.get("class"),
+            "outer": obj.get("outer"),
+            "propertyCount": len(properties),
+        }
+
+    def list_exported_objects(
+        self,
+        asset: str,
+        class_name: str,
+        name: str,
+        outer: str,
+        path: str,
+        property_name: str,
+        limit: int,
+        offset: int,
+    ) -> dict[str, Any]:
+        document = self.load_asset(asset)
+        available = self._exported_objects_available(document)
+        objects = document.get("exportedObjects", [])
+        needles = {
+            "className": class_name.casefold(),
+            "name": name.casefold(),
+            "outer": outer.casefold(),
+            "path": path.casefold(),
+            "propertyName": property_name.casefold(),
+        }
+        matching = []
+        for obj in objects:
+            properties = obj.get("properties", [])
+            property_names = [str(item.get("name", "")).casefold() for item in properties]
+            if needles["className"] and needles["className"] not in str(obj.get("class") or "").casefold():
+                continue
+            if needles["name"] and needles["name"] not in str(obj.get("name", "")).casefold():
+                continue
+            if needles["outer"] and needles["outer"] not in str(obj.get("outer") or "").casefold():
+                continue
+            object_path = str(obj.get("path") or obj.get("name", ""))
+            if needles["path"] and needles["path"] not in object_path.casefold():
+                continue
+            if needles["propertyName"] and not any(needles["propertyName"] in item for item in property_names):
+                continue
+            matching.append(obj)
+        return {
+            "asset": document.get("asset", asset),
+            "schemaVersion": document.get("schemaVersion"),
+            "exportedObjectsAvailable": available,
+            "total": len(matching),
+            "offset": offset,
+            "limit": limit,
+            "results": [self._compact_exported_object(obj) for obj in matching[offset : offset + limit]],
+            "coverageNote": None if available else "Schema-v1 documents have no exported-object inventory; absence is unknown, not empty.",
+        }
+
+    def get_exported_object(
+        self, asset: str, object_path: str, max_properties: int
+    ) -> dict[str, Any]:
+        document = self.load_asset(asset)
+        available = self._exported_objects_available(document)
+        objects = document.get("exportedObjects", [])
+        matches = [
+            obj
+            for obj in objects
+            if str(obj.get("path") or obj.get("name", "")) == object_path
+        ]
+        if not matches:
+            matches = [obj for obj in objects if str(obj.get("name", "")) == object_path]
+        base = {
+            "asset": document.get("asset", asset),
+            "schemaVersion": document.get("schemaVersion"),
+            "exportedObjectsAvailable": available,
+            "objectPath": object_path,
+            "coverageNote": None if available else "Schema-v1 documents have no exported-object inventory; absence is unknown, not empty.",
+        }
+        if not matches:
+            return {**base, "found": False, "exportedObject": None}
+        if len(matches) > 1:
+            return {**base, "found": True, "ambiguous": True, "exportedObject": None}
+        obj = matches[0]
+        properties = obj.get("properties", [])
+        exported = dict(obj)
+        exported["properties"] = properties[:max_properties]
+        return {
+            **base,
+            "found": True,
+            "ambiguous": False,
+            "exportedObject": exported,
+            "propertiesTruncated": len(properties) > max_properties,
+        }
+
+    def find_exported_objects(
+        self,
+        query: str,
+        class_name: str,
+        class_exact: str,
+        asset_prefix: str,
+        property_name: str,
+        property_value: str,
+        limit: int,
+        offset: int,
+    ) -> dict[str, Any]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        if query:
+            clauses.append("search LIKE ?")
+            params.append(f"%{query.casefold()}%")
+        if class_name:
+            clauses.append("lower(class) LIKE ?")
+            params.append(f"%{class_name.casefold()}%")
+        if class_exact:
+            clauses.append("class = ?")
+            params.append(class_exact)
+        if asset_prefix:
+            clauses.append("lower(asset) LIKE ?")
+            params.append(f"{asset_prefix.casefold()}%")
+        if property_name:
+            clauses.append("lower(properties) LIKE ?")
+            params.append(f"%{property_name.casefold()}%")
+        if property_value:
+            clauses.append("lower(properties) LIKE ?")
+            params.append(f"%{property_value.casefold()}%")
+        where = " WHERE " + " AND ".join(clauses) if clauses else ""
+        with sqlite3.connect(self.index_path) as db:
+            total = db.execute(f"SELECT COUNT(*) FROM exported_objects{where}", params).fetchone()[0]
+            rows = db.execute(
+                f"SELECT asset, path, name, class, outer, properties FROM exported_objects{where} "
+                "ORDER BY asset, path LIMIT ? OFFSET ?",
+                [*params, limit, offset],
+            ).fetchall()
+            assets_total = db.execute("SELECT COUNT(*) FROM assets").fetchone()[0]
+            assets_with_objects = db.execute(
+                "SELECT COUNT(*) FROM assets WHERE exported_objects_available = 1"
+            ).fetchone()[0]
+        return {
+            "query": query,
+            "className": class_name,
+            "classExact": class_exact,
+            "assetPrefix": asset_prefix,
+            "propertyName": property_name,
+            "propertyValue": property_value,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "results": [
+                {
+                    "asset": asset,
+                    "path": path,
+                    "name": name,
+                    "class": class_value,
+                    "outer": outer,
+                    "propertyCount": len(json.loads(properties)),
+                }
+                for asset, path, name, class_value, outer, properties in rows
+            ],
+            "coverage": {
+                "totalAssets": assets_total,
+                "assetsWithExportedObjects": assets_with_objects,
+                "note": "Schema-v1 documents are not searched; their object inventories are Unknown, not empty.",
+            },
+        }
+
     def find_references(self, query: str, limit: int) -> dict[str, Any]:
         needle = f"%{query.casefold()}%"
         with sqlite3.connect(self.index_path) as db:
@@ -667,7 +891,7 @@ TOOLS = [
     },
     {
         "name": "get_asset_summary",
-        "description": "Get concise semantic metadata, properties, functions, and diagnostics for one asset.",
+        "description": "Get concise semantic metadata, properties, defaults, exported objects, functions, and diagnostics for one asset.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -675,8 +899,58 @@ TOOLS = [
                 "maxProperties": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
                 "maxFunctions": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
                 "maxDefaults": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
+                "maxExportedObjects": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
             },
             "required": ["asset"],
+        },
+    },
+    {
+        "name": "list_exported_objects",
+        "description": "List placed actors, components, and instanced subobjects in one asset, with their resolved classes and stable object paths.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset": {"type": "string", "description": "Indexed asset path."},
+                "className": {"type": "string", "description": "Substring match against the export class."},
+                "name": {"type": "string", "description": "Substring match against the object name."},
+                "outer": {"type": "string", "description": "Substring match against the outer object name."},
+                "path": {"type": "string", "description": "Substring match against the package-local object path."},
+                "propertyName": {"type": "string", "description": "Require a property whose name contains this text."},
+                "limit": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": DEFAULT_LIMIT},
+                "offset": {"type": "integer", "minimum": 0, "default": 0},
+            },
+            "required": ["asset"],
+        },
+    },
+    {
+        "name": "get_exported_object",
+        "description": "Get one placed actor, component, or instanced subobject by stable object path, including bounded properties.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset": {"type": "string", "description": "Indexed asset path."},
+                "path": {"type": "string", "description": "Package-local object path; a unique object name is accepted as a fallback."},
+                "maxProperties": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 50},
+            },
+            "required": ["asset", "path"],
+        },
+    },
+    {
+        "name": "find_exported_objects",
+        "description": "Find exported objects across the catalog by class, name/path text, asset prefix, or property name/value.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Text to search in object identity and property text."},
+                "className": {"type": "string", "description": "Substring match against the export class; uses a full scan."},
+                "classExact": {"type": "string", "description": "Exact class match; uses the class index."},
+                "assetPrefix": {"type": "string", "description": "Restrict to asset paths with this prefix."},
+                "propertyName": {"type": "string", "description": "Require a property whose name contains this text."},
+                "propertyValue": {"type": "string", "description": "Require a property whose rendered value contains this text."},
+                "limit": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": DEFAULT_LIMIT},
+                "offset": {"type": "integer", "minimum": 0, "default": 0},
+            },
+            "required": [],
         },
     },
     {
@@ -829,9 +1103,11 @@ class McpServer:
             max_properties = bounded_limit(arguments.get("maxProperties", 50))
             max_functions = bounded_limit(arguments.get("maxFunctions", 50))
             max_defaults = bounded_limit(arguments.get("maxDefaults", 50))
+            max_exported_objects = bounded_limit(arguments.get("maxExportedObjects", 50))
             properties = document.get("properties", [])
             functions = document.get("functions", [])
             default_values = document.get("defaultValues", [])
+            exported_objects = document.get("exportedObjects", [])
             return _json_result(
                 {
                     "schemaVersion": document.get("schemaVersion"),
@@ -842,6 +1118,8 @@ class McpServer:
                     "parseStatus": document.get("parseStatus"),
                     "defaultValues": default_values[:max_defaults],
                     "defaultValuesTruncated": len(default_values) > max_defaults,
+                    "exportedObjects": exported_objects[:max_exported_objects],
+                    "exportedObjectsTruncated": len(exported_objects) > max_exported_objects,
                     "properties": properties[:max_properties],
                     "propertiesTruncated": len(properties) > max_properties,
                     "functions": [
@@ -859,6 +1137,43 @@ class McpServer:
                     "callEdges": document.get("callEdges", []),
                     "diagnostics": document.get("diagnostics", []),
                 }
+            )
+
+        if name == "list_exported_objects":
+            return _json_result(
+                self.catalog.list_exported_objects(
+                    str(arguments.get("asset", "")),
+                    str(arguments.get("className", "")),
+                    str(arguments.get("name", "")),
+                    str(arguments.get("outer", "")),
+                    str(arguments.get("path", "")),
+                    str(arguments.get("propertyName", "")),
+                    bounded_limit(arguments.get("limit")),
+                    max(0, int(arguments.get("offset", 0))),
+                )
+            )
+
+        if name == "get_exported_object":
+            return _json_result(
+                self.catalog.get_exported_object(
+                    str(arguments.get("asset", "")),
+                    str(arguments.get("path", "")),
+                    bounded_limit(arguments.get("maxProperties", 50)),
+                )
+            )
+
+        if name == "find_exported_objects":
+            return _json_result(
+                self.catalog.find_exported_objects(
+                    str(arguments.get("query", "")),
+                    str(arguments.get("className", "")),
+                    str(arguments.get("classExact", "")),
+                    str(arguments.get("assetPrefix", "")),
+                    str(arguments.get("propertyName", "")),
+                    str(arguments.get("propertyValue", "")),
+                    bounded_limit(arguments.get("limit")),
+                    max(0, int(arguments.get("offset", 0))),
+                )
             )
 
         if name == "get_function_summary":

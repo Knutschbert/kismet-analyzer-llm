@@ -55,7 +55,8 @@ scan per call instead of re-concatenating every row's JSON per query, and no
 separate `COUNT` rescan). Schema version 4 stores the search text flattened
 (`name value` instead of raw JSON, ~20% fewer scanned bytes) and added the
 byte-balanced process-pool scan, the scan cache, and mmap page reads. The
-index roughly doubles in size to hold the lowercase search text.
+index roughly doubles in size to hold the lowercase search text. Schema
+version 6 adds the exported-object index and a per-asset availability flag.
 
 ## Initial tools
 
@@ -68,7 +69,14 @@ index roughly doubles in size to hold the lowercase search text.
   boundaries), direct child classes, and class siblings. Accepts an asset path
   or a class name with or without the `_C` suffix.
 - `get_asset_summary` returns concise asset metadata, function summaries, and
-  (when present) the `defaultValues` array.
+  (when present) the `defaultValues` and `exportedObjects` arrays.
+- `list_exported_objects` lists placed actors, components, and instanced
+  subobjects in one asset, with resolved classes and stable object paths.
+- `get_exported_object` returns one exported object by path, with bounded
+  properties.
+- `find_exported_objects` searches the global exported-object index by class,
+  name/path text, asset prefix, or property name/value. Use `classExact` for an
+  indexed exact-class lookup; `className` is a substring scan and is slower.
 - `get_function_summary` returns one function without CFG blocks by default;
   pass `includeBlocks: true` for bounded control-flow evidence.
 - `find_references` searches indexed function-call and property references.
@@ -97,8 +105,21 @@ bytecode. When the tree is generated with default values (`KISMET_LLM_DEFAULTS=1
 for `produce-llm.bat`, or `--defaults` on `gen-llm-tree`/`to-llm-json`), each
 document gains a `defaultValues` array. Such assets become `parseStatus:
 "complete"` and are indexed, so `find_assets` can locate them by a default value
-and `get_asset_summary` returns those values. See `docs/schema.md` for the field
-schema.
+and `get_asset_summary` returns those values. Schema version 2 also adds
+`exportedObjects`, which retains each non-plumbing export's class and outer
+chain for placed map actors and Blueprint components. Schema-version-1
+documents have no such inventory; exported-object tools report it as Unknown
+rather than as an empty result. `find_exported_objects` searches only documents
+that actually carry `exportedObjects` and reports catalog coverage in its
+response. See `docs/schema.md` for the field schema.
+
+Index schema 7 omits verbose, low-value cooked metadata from the exported-object
+`search` blob while keeping it in the detailed `properties` payload:
+`StreamingTextureData`, `AlternateSkinWeights`, `PrecompiledEvaluationTemplate`,
+`AggGeom`, `SplineCurves`, `CreationMethod`, `bNetAddressable`,
+`UCSSerializationIndex`, `UCSModifiedProperties`, `StaticMeshComponent`, and
+`BodyInstance`. Explicit `propertyName`/`propertyValue` searches still see them;
+only global text search ignores them.
 
 ## Test
 

@@ -8,7 +8,7 @@ The exporter currently emits these top-level fields:
 
 ```text
 schemaVersion, source, parseStatus, asset, class, parent, engineVersion,
-properties, defaultValues, functions, callEdges, diagnostics
+properties, defaultValues, exportedObjects, functions, callEdges, diagnostics
 ```
 
 `defaultValues` is optional. It is present only when the export is generated
@@ -29,11 +29,58 @@ generator instance) are emitted with component-qualified names:
 Blueprint plumbing (SimpleConstructionScript, SCS_Node, the Blueprint marker
 itself), empty templates, and serialized null/zero values are skipped.
 
+## Exported objects
+
+Schema version 2 adds `exportedObjects` whenever `--defaults` is used. It
+retains the object name, resolved export class, resolved outer, and meaningful
+serialized properties for each non-plumbing, non-CDO `NormalExport`.
+
+This supplements rather than replaces `defaultValues`: the latter remains a
+flat compatibility projection. `exportedObjects` is the authoritative source
+when an object class matters, particularly for placed map actors and Blueprint
+component/subobject templates.
+
+```json
+{
+  "schemaVersion": 2,
+  "exportedObjects": [
+    {
+      "name": "SpwnS4cAtkVIP1",
+      "class": "BP_FreeableVIPSpawner_C",
+      "outer": "PersistentLevel",
+      "path": "TO_Falmire.PersistentLevel.SpwnS4cAtkVIP1",
+      "properties": [
+        {
+          "name": "SpawnWaveParams",
+          "type": "Struct",
+          "value": "SpawnWaveParamOverrides(SpecialSpawnSpec=WarHeroSpawn_C, bPrivateWave=True)"
+        }
+      ]
+    },
+    {
+      "name": "NODE_AddTextRenderComponent-0",
+      "class": "TextRenderComponent",
+      "outer": "Default__BaseSpawner_C",
+      "properties": [
+        {"name": "bHiddenInGame", "type": "Bool", "value": "True"}
+      ]
+    }
+  ]
+}
+```
+
+`class` and `outer` are omitted when their package indices cannot be resolved.
+`path` is a dot-joined outer chain that includes the package-level outer and is
+the stable identity for per-asset object lookup; `name` alone is not necessarily
+unique.
+Objects are retained even with an empty `properties` list so class inventories
+do not depend on an instance overriding a default.
+
 ## Asset summary
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": "kismet-bytecode",
   "parseStatus": "complete",
   "asset": "/Game/Characters/BP_Player",
