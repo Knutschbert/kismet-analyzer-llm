@@ -1120,6 +1120,10 @@ class McpServer:
                     "defaultValuesTruncated": len(default_values) > max_defaults,
                     "exportedObjects": exported_objects[:max_exported_objects],
                     "exportedObjectsTruncated": len(exported_objects) > max_exported_objects,
+                    # v3 map docs drop engine art/geometry exports; this per-class aggregate keeps
+                    # map density answerable (e.g. count of static meshes). None/absent for docs
+                    # that were not pruned (all non-map assets).
+                    "prunedExportCounts": document.get("prunedExportCounts"),
                     "properties": properties[:max_properties],
                     "propertiesTruncated": len(properties) > max_properties,
                     "functions": [
